@@ -1,0 +1,5 @@
+vendor/*
+
+# Ignore mounts
+web/uploads
+private

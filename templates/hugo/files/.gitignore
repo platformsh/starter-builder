@@ -1,0 +1,6 @@
+/.GOPATH
+/bin
+.idea/*
+
+# Ignore build directory
+public
