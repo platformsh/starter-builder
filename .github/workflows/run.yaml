@@ -25,3 +25,6 @@ jobs:
             - name: 'Install dependencies'
               run: |
                   ~/.poetry/bin/poetry install
+            - name: 'Try to do something (will fail or hang)'
+              run: |
+                  ~/.poetry/bin/poetry run doit:full drupal9
