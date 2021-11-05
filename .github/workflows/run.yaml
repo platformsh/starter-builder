@@ -16,15 +16,41 @@ jobs:
         name: 'Set up starter-builder'
         steps: 
             - uses: actions/checkout@v2
-            - uses: actions/setup-python@v2
+            - name: Setup Python
+              uses: actions/setup-python@v2
               with:
-                python-version: '3.9' 
-            - name: 'Download Poetry'
+                python-version: 3.10.0
+
+            - name: Install poetry
               run: |
-                  curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
-            - name: 'Install dependencies'
+                python -m pip install poetry==1.1.11
+
+            - name: Configure poetry
               run: |
-                  ~/.poetry/bin/poetry install
-            - name: 'Try to do something (will fail or hang)'
+                python -m poetry config virtualenvs.in-project true
+
+            - name: Cache the virtualenv
+              uses: actions/cache@v2
+              with:
+                path: ./.venv
+                key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
+
+            - name: Install dependencies
               run: |
-                  ~/.poetry/bin/poetry run doit:full drupal9
+                python -m poetry install
+
+            - name: Try to do something
+              run: |
+                python -m poetry run doit:full drupal9
+            # - uses: actions/setup-python@v2
+            #   with:
+            #     python-version: '3.9' 
+            # - name: 'Download Poetry'
+            #   run: |
+            #       curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+            # - name: 'Install dependencies'
+            #   run: |
+            #       ~/.poetry/bin/poetry install
+            # - name: 'Try to do something (will fail or hang)'
+            #   run: |
+            #       ~/.poetry/bin/poetry run doit:full drupal9
