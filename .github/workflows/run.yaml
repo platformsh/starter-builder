@@ -64,6 +64,9 @@ jobs:
             - name: 'starter-builder: push'
               run: |
                 python -m poetry run doit push:drupal9
-            # - name: 'starter-builder: pull-request'
-            #   run: |
-            #     python -m poetry run doit create_pull_request:drupal9
+            - name: 'starter-builder: pull-request'
+              run: |
+                curl -s --location --request POST --header "Authorization: Bearer $GITHUB_TOKEN" \
+                    --header 'Content-Type: application/json' \
+                    --data-raw '{"head": "update", "base": "master", "title": "auto-updates"}' \
+                    https://api.github.com/repos/$GITHUB_REPOSITORY/pulls
