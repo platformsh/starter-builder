@@ -1,5 +1,5 @@
 ---
-name: 'Test updates'
+name: 'Drupal 9 updates'
 
 on:
   push:
@@ -49,12 +49,18 @@ jobs:
             - name: 'starter-builder: init-remote'
               run: |
                 cd templates/drupal9/build
-                git remote -v
                 git remote add project https://github.com/drupal/recommended-project.git
-                git remote -v
                 git config --global user.email "devrel@internal.platform.sh"
                 git config --global user.name "Platform.sh DevRel bot"
             - name: 'starter-builder: update'
               run: |
                 python -m poetry run doit update:drupal9
-
+            - name: 'starter-builder: platformify'
+              run: |
+                python -m poetry run doit platformify:drupal9
+            - name: 'starter-builder: branch'
+              run: |
+                python -m poetry run doit branch:drupal9
+            - name: 'starter-builder: push'
+              run: |
+                python -m poetry run doit push:drupal9
