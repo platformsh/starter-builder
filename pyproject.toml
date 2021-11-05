@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "template-builder"
+name = "starter-builder"
 version = "0.1.0"
-description = "Utility scripts to manage the Platform.sh Template projects"
+description = "Update manager for Platform.sh templates"
 authors = ["Platform.sh"]
 license = "MIT"
 
