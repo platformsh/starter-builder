@@ -46,6 +46,11 @@ jobs:
                 token: ${{ secrets.TOKEN }}
                 repository: platformsh-templates/drupal9
                 path: templates/drupal9/build
+            - name: 'starter-builder: init-remote'
+              run: |
+                cd templates/drupal9/build
+                git remote -v
+                git remote add project https://github.com/drupal/recommended-project.git
             - name: 'starter-builder: update'
               run: |
                 python -m poetry run doit update:drupal9
