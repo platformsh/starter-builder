@@ -51,6 +51,9 @@ jobs:
                 cd templates/drupal9/build
                 git remote -v
                 git remote add project https://github.com/drupal/recommended-project.git
+                git remote -v
+                git config --global user.email "devrel@internal.platform.sh"
+                git config --global user.name "Platform.sh DevRel bot"
             - name: 'starter-builder: update'
               run: |
                 python -m poetry run doit update:drupal9
