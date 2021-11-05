@@ -37,13 +37,16 @@ jobs:
             - name: Install dependencies
               run: |
                 python -m poetry install
-            - name: Cleanup template
+            - name: 'starter-builder: cleanup'
               run: |
                 python -m poetry run doit cleanup:drupal9
-            - name: 'Preparing blueprint-environment'
+            - name: 'starter-builder: init'
               uses: actions/checkout@v2
               with:
                 token: ${{ secrets.TOKEN }}
                 repository: platformsh-templates/drupal9
                 path: templates/drupal9/build
+            - name: 'starter-builder: update'
+              run: |
+                python -m poetry run doit update:drupal9
 
