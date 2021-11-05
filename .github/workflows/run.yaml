@@ -11,7 +11,7 @@ on:
 #     - cron:  "42 7 15 * *" #build project on the 15th day of every month on the 42nd minute of the 7th hour.
 
 env:
-    GITHUB_TOKEN: ${{ secrets.TOKEN }}
+    GITHUB_TOKEN: ${{ secrets.DEVREL_TOKEN }}
 
 jobs:
     build:
