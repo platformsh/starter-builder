@@ -41,7 +41,7 @@ jobs:
 
             - name: Try to do something
               run: |
-                python -m poetry run doit:full drupal9
+                python -m poetry run doit full:drupal9
             # - uses: actions/setup-python@v2
             #   with:
             #     python-version: '3.9' 
