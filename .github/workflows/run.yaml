@@ -64,6 +64,11 @@ jobs:
             - name: 'starter-builder: push'
               run: |
                 python -m poetry run doit push:drupal9
+    pull:
+        name: 'Open pull request for update'
+        runs-on: ubuntu-latest
+        needs: build
+        steps:
             - name: 'starter-builder: pull-request'
               run: |
                 curl -s --location --request POST --header "Authorization: Bearer $GITHUB_TOKEN" \
