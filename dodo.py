@@ -131,6 +131,17 @@ def task_push():
             'actions': project.push,
         }
 
+def task_create_pull_request():
+    """
+    DoIt Task: Creates a pull request from the prepared branch on GitHub.
+
+    Usage: doit create_pull_request:<project>
+    """
+    for project in ALL_PROJECTS:
+        yield {
+            'name': project.name,
+            'actions': project.create_pull_request,
+        }
 
 def task_rebuild():
     """

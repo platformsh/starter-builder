@@ -54,6 +54,7 @@ class BaseProject(object):
     def __init__(self, name):
         self.name = name
         self.builddir = os.path.join(TEMPLATEDIR, self.name, 'build/')
+        self.github_token = os.getenv('GITHUB_TOKEN', None)
 
         # Include default switches on all composer commands. This can be over-ridden per-template in a subclass.
         if 'composer.json' in self.updateCommands:
@@ -126,6 +127,45 @@ class BaseProject(object):
         return ['cd {0} && if [ `git rev-parse update` != `git rev-parse master` ] ; then git checkout update && git push --force -u origin update; fi'.format(
             self.builddir)
         ]
+
+    
+    def _set_github_token(self, token):
+       # CMD line token overrides env var token.
+       if token is not None:
+           self.github_token = token
+       # If token is still not set, alert user. Pd: Cannot failt gracefully as it is not on main task code.
+       if self.github_token is None:
+           raise BaseException("Github token not provided. Please provide via --token argument or via env:GITHUB_TOKEN var.")
+
+    def _get_github_auth_header(self,token=None):
+        self._set_github_token(token)
+
+        return {"Authorization": "token {0}".format(self.github_token)}
+
+    @property
+    def create_pull_request(self, token=None):
+        """
+        Creates a pull request from the "UPDATER_BRANCH_NAME" branch to master.
+        """
+        
+        pulls_api_url = 'https://api.github.com/repos/platformsh-templates/{0}/pulls'.format(self.name)
+
+        body = {"head": "update", "base": "master", "title": "Update to latest upstream"}
+        
+        print("Creating pull request.")
+        
+        response = requests.post(pulls_api_url, headers=self._get_github_auth_header(token), data=json.dumps(body))
+        
+        if response.status_code == 201:
+            return True
+        
+        # the PR creation can fail if the PR already exists, we should skip the creation and continue
+        if response.status_code == 422 and response.json()['message']=="Validation Failed" and "A pull request already exists for" in response.text:
+            return True
+
+        print("Failed to create pull request.")
+        print(response.content)
+        return False
 
     def package_update_actions(self):
         """
