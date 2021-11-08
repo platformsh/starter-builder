@@ -20,6 +20,7 @@ jobs:
         outputs:
             templates: ${{ steps.getlist.outputs.templates }}
             matrix: ${{ steps.sanity.outputs.matrix }}
+            check: ${{ steps.sanity2.outputs.sanityb }}
         steps: 
           - uses: actions/checkout@v2
           - name: Setup Python
@@ -38,6 +39,18 @@ jobs:
               export TEST='{\"template\":[\"drupal8-govcms8\", \"flask\", \"nextcloud\", \"spring-mvc-maven-mongodb\"]}'
               echo $TEST
               echo "::set-output name=matrix::$( echo "$TEST")"
+          - name: 'Another check'
+            id: sanity2
+            run: |
+              TEMPLATES=$(python -c '
+              import os
+              import json
+              dirs=os.listdir("{}/templates".format(os.getcwd()))
+              dirs.remove("__init__.py")
+              test = {"template": dirs}
+              print(json.dumps(dirs))
+              ')
+              echo "::set-output name=sanityb::$TEMPLATES"
 
     check:
         needs: build
@@ -59,7 +72,17 @@ jobs:
             - name: Simple task
               run: |
                 echo ${{ matrix.template }}
-
+    checkc:
+        needs: build
+        runs-on: ubuntu-latest
+        name: 'Checkc'
+        strategy:
+            matrix: 
+                template: ${{fromJSON(needs.build.outputs.check)}}
+        steps:
+            - name: Simple task
+              run: |
+                echo ${{ matrix.template }}
 
     # update:
     #     needs: build
