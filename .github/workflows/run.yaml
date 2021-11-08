@@ -44,6 +44,10 @@ jobs:
         strategy:
             matrix: 
                 template: ${{fromJSON(needs.build.outputs.templates)}}
+                exclude:
+                  - template: 'nuxtjs'
+                  - template: 'pimcore'
+                  - template: 'django3'
         steps:
             - name: Simple task
               run: |
