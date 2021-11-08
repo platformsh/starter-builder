@@ -29,13 +29,14 @@ jobs:
           - name: 'Get template list'
             id: getlist
             run: |
-              TEMPLATES=$(python get_templates_matrix.py)
+              export TEMPLATES=$(python get_templates_matrix.py)
               echo $TEMPLATES
-              echo "::set-output name=templates::$(python get_templates_matrix.py)"
+              echo "::set-output name=templates::$( python get_templates_matrix.py )"
           - name: 'Sanity check'
             id: sanity
             run: |
-              TEST='{\"template\":[\"drupal8-govcms8\", \"flask\", \"nextcloud\", \"spring-mvc-maven-mongodb\"]}'
+              export TEST='{\"template\":[\"drupal8-govcms8\", \"flask\", \"nextcloud\", \"spring-mvc-maven-mongodb\"]}'
+              echo $TEST
               echo "::set-output name=matrix::$( echo "$TEST")"
 
     check:
