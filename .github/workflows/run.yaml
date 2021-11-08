@@ -31,12 +31,12 @@ jobs:
             run: |
               TEMPLATES=$(python get_templates_matrix.py)
               echo $TEMPLATES
-              echo "::set-output name=templates::$TEMPLATES"
+              echo "::set-output name=templates::$(python get_templates_matrix.py)"
           - name: 'Sanity check'
             id: sanity
             run: |
-              export TEST='{\"template\":[\"drupal8-govcms8\", \"flask\", \"nextcloud\", \"spring-mvc-maven-mongodb\"]}'
-              echo "::set-output name=matrix::$TEST"
+              TEST='{\"template\":[\"drupal8-govcms8\", \"flask\", \"nextcloud\", \"spring-mvc-maven-mongodb\"]}'
+              echo "::set-output name=matrix::$( echo "$TEST")"
 
     check:
         needs: build
@@ -48,16 +48,16 @@ jobs:
             - name: Simple task
               run: |
                 echo ${{ matrix.template }}
-    # checkb:
-    #     needs: build
-    #     runs-on: ubuntu-latest
-    #     name: 'Checkb'
-    #     strategy:
-    #         matrix: ${{fromJSON(needs.build.outputs.templates)}}
-    #     steps:
-    #         - name: Simple task
-    #           run: |
-    #             echo ${{ matrix.template }}
+    checkb:
+        needs: build
+        runs-on: ubuntu-latest
+        name: 'Checkb'
+        strategy:
+            matrix: ${{fromJSON(needs.build.outputs.templates)}}
+        steps:
+            - name: Simple task
+              run: |
+                echo ${{ matrix.template }}
 
 
     # update:
