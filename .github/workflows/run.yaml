@@ -18,8 +18,9 @@ env:
 jobs:
     build:
         runs-on: ubuntu-latest
-        env:
-            TEMPLATE: drupal9
+        strategy:
+            matrix:
+              template: ['drupal9', 'wordpress-composer']
         name: 'Set up starter-builder'
         steps: 
             - uses: actions/checkout@v2
@@ -44,7 +45,7 @@ jobs:
             - name: Expose current template
               id: template_id
               run: |
-                  TEMPLATE=drupal9
+                  export TEMPLATE=${{ matrix.template }}
                   echo "::set-output name=current_template::$TEMPLATE"
             - name: 'starter-builder: cleanup'
               run: |
