@@ -69,7 +69,7 @@ jobs:
                 git config --global user.name "$GIT_USER"
             - name: 'starter-builder: update'
               run: |
-                python -m poetry run doit update${{ matrix.template }}
+                python -m poetry run doit update:${{ matrix.template }}
             - name: 'starter-builder: platformify'
               run: |
                 python -m poetry run doit platformify:${{ matrix.template }}
