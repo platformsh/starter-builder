@@ -1,0 +1,188 @@
+---
+name: 'Updates'
+
+on:
+  push:
+    branches-ignore:
+      - 'main'
+#   schedule:
+#     - cron:  "42 7 15 * *" #build project on the 15th day of every month on the 42nd minute of the 7th hour.
+
+env:
+    GITHUB_TOKEN: ${{ secrets.DEVREL_TOKEN }}
+    GIT_EMAIL: ${{ secrets.DEVREL_EMAIL }}
+    GIT_USER: ${{ secrets.DEVREL_USER }}
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        name: 'Get templates'
+        outputs:
+            templates: ${{ steps.getlist.outputs.templates }}
+        steps: 
+          - uses: actions/checkout@v2
+          - name: Setup Python
+            uses: actions/setup-python@v2
+            with:
+              python-version: 3.9
+          - name: 'Get template list'
+            id: getlist
+            run: |
+              TEMPLATES=$(python -c '
+              import os
+              import json
+              dirs=os.listdir("{}/templates".format(os.getcwd()))
+              dirs.remove("__init__.py")
+              test = {"template": dirs}
+              print(json.dumps(dirs))
+              ')
+              echo "::set-output name=templates::$TEMPLATES"
+    update:
+        needs: build
+        runs-on: ubuntu-latest
+        name: 'Template'
+        strategy:
+            fail-fast: false
+            matrix: 
+                template: ${{fromJSON(needs.build.outputs.templates)}}
+                exclude:
+                  - template: 'nuxtjs'
+                  - template: 'pimcore'
+                  - template: 'django3'
+                  - template: 'microprofile-wildfly'
+                  - template: 'symfony5'
+                  - template: 'django2'
+                  - template: 'gatsby-strapi'
+                  - template: 'drupal8-opigno'
+                  - template: 'echo'
+                  - template: 'python3'
+                  - template: 'nextjs'
+                  - template: 'express'
+                  - template: 'drupal8'
+                  - template: 'spring-kotlin'
+                  - template: 'eleventy-strapi'
+                  - template: 'koa'
+                  - template: 'microprofile-openliberty'
+                  - template: 'gatsby-wordpress'
+                  - template: 'pyramid'
+                  - template: 'mattermost'
+                  - template: 'backdrop'
+                  - template: 'golang'
+                  - template: 'wordpress-woocommerce'
+                  - template: 'strapi'
+                  - template: 'magento2ce'
+                  - template: 'nextcloud'
+                  - template: 'microprofile-helidon'
+                  - template: 'python3-uwsgi'
+                  - template: 'beego'
+                  - template: 'meilisearch'
+                  - template: 'django3'
+                  - template: 'gatsby'
+                  - template: 'microprofile-tomee'
+                  - template: 'akeneo'
+                  - template: 'symfony4'
+                  - template: 'microprofile-kumuluzee'
+                  - template: 'nodejs'
+                  - template: 'wordpress-bedrock'
+                  - template: 'tomcat'
+                  - template: 'typo3'
+                  - template: 'wordpress-vanilla'
+                  - template: 'elastic-apm'
+                  - template: 'probot'
+                  - template: 'flask'
+                  - template: 'drupal8-multisite'
+                  - template: 'jetty'
+                  - template: 'lisp'
+                  - template: 'spring-boot-gradle-mysql'
+                  - template: 'drupal8-govcms8'
+                  - template: 'wagtail'
+                  - template: 'php'
+                  - template: 'jenkins'
+                  - template: 'microprofile-thorntail'
+                  - template: 'laravel'
+                  - template: 'quarkus'
+                  - template: 'xwiki'
+                  - template: 'spring-boot-maven-mysql'
+                  - template: 'spring-mvc-maven-mongodb'
+                  - template: 'micronaut'
+                  - template: 'pelican'
+                  - template: 'wordpress-composer'
+                  - template: 'rails'
+                  - template: 'aspnet-core'
+                  - template: 'gin'
+                  - template: 'directus'
+                  - template: 'gatsby-drupal'
+                  - template: 'microprofile-payara'
+                  - template: 'sculpin'
+        steps: 
+            - uses: actions/checkout@v2
+            - name: Setup Python
+              uses: actions/setup-python@v2
+              with:
+                python-version: 3.9
+            - name: Install Poetry
+              run: |
+                python -m pip install poetry==1.1.11
+            - name: Configure Poetry
+              run: |
+                python -m poetry config virtualenvs.in-project true
+            - name: Cache the virtualenv
+              uses: actions/cache@v2
+              with:
+                path: ./.venv
+                key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
+            - name: Install dependencies
+              run: |
+                python -m poetry install
+            - name: 'Cleanup'
+              run: |
+                python -m poetry run doit cleanup:${{ matrix.template }}
+            - name: 'Initialize'
+              uses: actions/checkout@v2
+              with:
+                token: ${{ secrets.DEVREL_TOKEN }}
+                repository: platformsh-templates/${{ matrix.template }}
+                path: templates/${{ matrix.template }}/build
+            - name: 'Initialize remote'
+              run: |
+                # Get the remote 
+                export TEMPLATE=${{ matrix.template }}
+
+                REMOTE_UPSTREAM=$(poetry run python -c '
+                import os
+                import dodo
+                try: 
+                    print(dodo.project_factory(os.environ["TEMPLATE"]).remote)
+                except:
+                    print("no remote")
+                ')
+
+                # Set up Git.
+                cd templates/${{ matrix.template }}/build
+                git config --global user.email "$GIT_EMAIL"
+                git config --global user.name "$GIT_USER"
+
+                if [ "$REMOTE_UPSTREAM" == "no remote" ]; then
+                    echo "$TEMPLATE is type Basic. Skipping remote clone."
+                else
+                    echo "Upstream found: $REMOTE_UPSTREAM"
+                    git remote add project $REMOTE_UPSTREAM
+                fi
+            - name: 'Update'
+              run: |
+                python -m poetry run doit update:${{ matrix.template }}
+            - name: 'Platformify'
+              run: |
+                python -m poetry run doit platformify:${{ matrix.template }}
+            - name: 'Branch'
+              run: |
+                python -m poetry run doit branch:${{ matrix.template }}
+            - name: 'Push'
+              run: |
+                python -m poetry run doit push:${{ matrix.template }}
+    #         - name: 'Open pull request'
+    #           run: |
+    #               curl -s --location --request POST --header "Authorization: Bearer $GITHUB_TOKEN" \
+    #                 --header 'Content-Type: application/json' \
+    #                 --data-raw '{"head": "update", "base": "master", "title": "auto-updates"}' \
+    #                 https://api.github.com/repos/$GITHUB_REPOSITORY/pulls

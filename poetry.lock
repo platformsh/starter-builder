@@ -20,8 +20,8 @@ optional = false
 python-versions = "*"
 
 [package.dependencies]
-toml = "*"
 pycodestyle = ">=2.6.0"
+toml = "*"
 
 [[package]]
 name = "cloudpickle"
@@ -48,9 +48,9 @@ optional = false
 python-versions = ">=3.5"
 
 [package.dependencies]
-pyinotify = {version = "*", markers = "sys_platform == \"linux\""}
-macfsevents = {version = "*", markers = "sys_platform == \"darwin\""}
 cloudpickle = "*"
+macfsevents = {version = "*", markers = "sys_platform == \"darwin\""}
+pyinotify = {version = "*", markers = "sys_platform == \"linux\""}
 
 [[package]]
 name = "isort"
@@ -61,9 +61,9 @@ optional = false
 python-versions = ">=3.6,<4.0"
 
 [package.extras]
-colors = ["colorama (>=0.4.3,<0.5.0)"]
 pipfile_deprecated_finder = ["pipreqs", "requirementslib"]
 requirements_deprecated_finder = ["pipreqs", "pip-api"]
+colors = ["colorama (>=0.4.3,<0.5.0)"]
 
 [[package]]
 name = "lazy-object-proxy"
@@ -127,10 +127,10 @@ python-versions = ">=3.5.*"
 
 [package.dependencies]
 astroid = ">=2.4.0,<=2.5"
-mccabe = ">=0.6,<0.7"
 colorama = {version = "*", markers = "sys_platform == \"win32\""}
-toml = ">=0.7.1"
 isort = ">=4.2.5,<6"
+mccabe = ">=0.6,<0.7"
+toml = ">=0.7.1"
 
 [[package]]
 name = "pyparsing"

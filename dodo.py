@@ -131,7 +131,6 @@ def task_push():
             'actions': project.push,
         }
 
-
 def task_rebuild():
     """
     DoIt Task: Aggregates the update, platformify, and branch tasks for one-stop shopping.
