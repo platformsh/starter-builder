@@ -19,6 +19,7 @@ jobs:
         name: 'Get templates'
         outputs:
             templates: ${{ steps.getlist.outputs.templates }}
+            matrix: ${{ steps.sanity.outputs.matrix }}
         steps: 
           - uses: actions/checkout@v2
           - name: Setup Python
@@ -31,16 +32,22 @@ jobs:
               TEMPLATES=$(python get_templates_matrix.py)
               echo $TEMPLATES
               echo "::set-output name=templates::$TEMPLATES"
+          - name: 'Sanity check'
+            id: sanity
+            run: |
+              echo "::set-output name=matrix::{\"template\":[\"drupal8-govcms8\", \"flask\", \"nextcloud\", \"spring-mvc-maven-mongodb\"]}"
+
     check:
         needs: build
         runs-on: ubuntu-latest
         name: 'Check'
         strategy:
-            matrix: ${{fromJSON(needs.build.outputs.templates)}}
+            matrix: ${{fromJSON(needs.build.outputs.matrix)}}
         steps:
             - name: Simple task
               run: |
                 echo ${{ matrix.template }}
+
     # update:
     #     needs: build
     #     runs-on: ubuntu-latest
