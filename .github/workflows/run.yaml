@@ -31,7 +31,7 @@ jobs:
             run: |
               TEMPLATES=$(python get_templates_matrix.py)
               echo $TEMPLATES
-              echo "::set-output name=templates::'$TEMPLATES'"
+              echo "::set-output name=templates::$TEMPLATES"
           - name: 'Sanity check'
             id: sanity
             run: |
@@ -42,11 +42,22 @@ jobs:
         runs-on: ubuntu-latest
         name: 'Check'
         strategy:
+            matrix: ${{fromJSON(needs.build.outputs.matrix)}}
+        steps:
+            - name: Simple task
+              run: |
+                echo ${{ matrix.template }}
+    checkb:
+        needs: build
+        runs-on: ubuntu-latest
+        name: 'Checkb'
+        strategy:
             matrix: ${{fromJSON(needs.build.outputs.templates)}}
         steps:
             - name: Simple task
               run: |
                 echo ${{ matrix.template }}
+
 
     # update:
     #     needs: build
