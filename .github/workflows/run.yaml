@@ -41,7 +41,7 @@ jobs:
         steps:
             - name: Simple task
               run: |
-              echo ${{ matrix.template }}
+                echo ${{ matrix.template }}
     update:
         needs: build
         runs-on: ubuntu-latest
