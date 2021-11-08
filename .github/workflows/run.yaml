@@ -27,6 +27,7 @@ jobs:
             run: |
               TEMPLATES=$(python -c 'import os; dirs=os.listdir("{}/templates".format(os.getcwd())); dirs.remove("__init__.py"); print(dirs)')
               echo $TEMPLATES
+    update:
         needs: build
         runs-on: ubuntu-latest
         strategy:
