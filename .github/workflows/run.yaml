@@ -14,7 +14,6 @@ env:
     GIT_USER: ${{ secrets.DEVREL_USER }}
 
 jobs:
-jobs:
     build:
         runs-on: ubuntu-latest
         name: 'Get templates'
