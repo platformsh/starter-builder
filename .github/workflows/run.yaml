@@ -42,42 +42,43 @@ jobs:
             - name: Install dependencies
               run: |
                 python -m poetry install
-            - name: Expose current template
-              id: template_id
-              run: |
-                  export TEMPLATE=${{ matrix.template }}
-                  echo "::set-output name=current_template::$TEMPLATE"
+            # - name: Expose current template
+            #   id: template_id
+            #   run: |
+            #       export TEMPLATE=${{ matrix.template }}
+            #       echo "::set-output name=current_template::$TEMPLATE"
             - name: 'starter-builder: cleanup'
               run: |
-                python -m poetry run doit cleanup:$TEMPLATE
+                python -m poetry run doit cleanup:${{ matrix.template }}
             - name: 'starter-builder: init'
               uses: actions/checkout@v2
               with:
-                token: ${{ secrets.TOKEN }}
-                repository: platformsh-templates/${{ steps.template_id.outputs.current_template }}
-                path: templates/${{ steps.template_id.outputs.current_template }}/build
+                token: ${{ secrets.DEVREL_TOKEN }}
+                repository: platformsh-templates/${{ matrix.template }}
+                path: templates/${{ matrix.template }}/build
             - name: 'starter-builder: init-remote'
               run: |
                 # Get the remote 
+                export TEMPLATE=${{ matrix.template }}
                 REMOTE_UPSTREAM=$(python -m poetry run python -c 'import dodo; import os; print(dodo.project_factory(os.environ["TEMPLATE"]).remote)')
                 echo "Upstream found: $REMOTE_UPSTREAM"
-                cd templates/$TEMPLATE/build
+                cd templates/${{ matrix.template }}/build
                 git remote add project $REMOTE_UPSTREAM
                 # Set up Git.
                 git config --global user.email "$GIT_EMAIL"
                 git config --global user.name "$GIT_USER"
             - name: 'starter-builder: update'
               run: |
-                python -m poetry run doit update:$TEMPLATE
+                python -m poetry run doit update${{ matrix.template }}
             - name: 'starter-builder: platformify'
               run: |
-                python -m poetry run doit platformify:$TEMPLATE
+                python -m poetry run doit platformify:${{ matrix.template }}
             - name: 'starter-builder: branch'
               run: |
-                python -m poetry run doit branch:$TEMPLATE
+                python -m poetry run doit branch:${{ matrix.template }}
             - name: 'starter-builder: push'
               run: |
-                python -m poetry run doit push:$TEMPLATE
+                python -m poetry run doit push:${{ matrix.template }}
     # pull:
     #     name: 'Open pull request for update'
     #     runs-on: ubuntu-latest
