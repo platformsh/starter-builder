@@ -16,6 +16,7 @@ env:
 jobs:
     build:
         runs-on: ubuntu-latest
+        # Reference for passing the matrix https://stackoverflow.com/questions/59977364/github-actions-how-use-strategy-matrix-with-script
         name: 'Get templates'
         outputs:
             templates: ${{ steps.getlist.outputs.templates }}
@@ -28,7 +29,7 @@ jobs:
           - name: 'Get template list'
             id: getlist
             run: |
-              TEMPLATES=$(python -c 'import os; dirs=os.listdir("{}/templates".format(os.getcwd())); dirs.remove("__init__.py"); print(dirs)')
+              TEMPLATES=$(python get_templates_matrix.py)
               echo "::set-output name=templates::$TEMPLATES"
     check:
         needs: build
@@ -37,7 +38,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                template: ${{ needs.build.outputs.templates }}
+                template: ${{ fromJSON( needs.build.outputs.templates ) }}
         steps:
             - name: Simple task
               run: |
@@ -48,7 +49,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-              template: ['drupal9', 'magento2ce', 'hugo']
+              template: ['drupal9', 'hugo']
         name: 'Template'
         steps: 
             - uses: actions/checkout@v2
