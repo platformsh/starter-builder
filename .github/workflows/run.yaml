@@ -4,7 +4,7 @@ name: 'Drupal 9 updates'
 on:
   push:
     branches-ignore:
-      - 'master'
+      - 'main'
 
 # on:
 #   schedule:
@@ -57,9 +57,9 @@ jobs:
                 path: templates/${{ steps.template_id.outputs.current_template }}/build
             - name: 'starter-builder: init-remote'
               run: |
-                cd templates/$TEMPLATE/build
-                # Get the remote
+                # Get the remote 
                 REMOTE_UPSTREAM=$(python -m poetry run python -c 'import dodo; import os; print(dodo.project_factory(os.environ["TEMPLATE"]).remote)')
+                cd templates/$TEMPLATE/build
                 git remote add project $REMOTE_UPSTREAM
                 # Set up Git.
                 git config --global user.email $GIT_EMAIL
