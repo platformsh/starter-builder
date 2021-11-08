@@ -33,12 +33,14 @@ jobs:
     check:
         needs: build
         runs-on: ubuntu-latest
+        name: 'Check'
         strategy:
             fail-fast: false
             matrix:
                 template: ${{ needs.build.outputs.templates }}
         steps:
-            - run: |
+            - name: Simple task
+              run: |
               echo ${{ matrix.template }}
     update:
         needs: build
