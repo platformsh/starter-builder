@@ -20,7 +20,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-              template: ['drupal9', 'magento']
+              template: ['drupal9', 'magento2ce']
         name: 'Remotes'
         steps: 
             - uses: actions/checkout@v2
