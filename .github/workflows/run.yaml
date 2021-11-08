@@ -42,8 +42,8 @@ jobs:
         runs-on: ubuntu-latest
         name: 'Template'
         strategy:
+            fail-fast: false
             matrix: 
-                fail-fast: false
                 template: ${{fromJSON(needs.build.outputs.templates)}}
                 exclude:
                   - template: 'nuxtjs'
