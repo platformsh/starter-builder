@@ -59,7 +59,7 @@ jobs:
               run: |
                 cd templates/$TEMPLATE/build
                 # Get the remote
-                REMOTE_UPSTREAM=$(poetry run python -c 'import dodo; import os; print(dodo.project_factory(os.environ["TEMPLATE"]).remote)')
+                REMOTE_UPSTREAM=$(python -m poetry run python -c 'import dodo; import os; print(dodo.project_factory(os.environ["TEMPLATE"]).remote)')
                 git remote add project $REMOTE_UPSTREAM
                 # Set up Git.
                 git config --global user.email $GIT_EMAIL
