@@ -16,7 +16,6 @@ env:
 jobs:
     build:
         runs-on: ubuntu-latest
-        # Reference for passing the matrix https://stackoverflow.com/questions/59977364/github-actions-how-use-strategy-matrix-with-script
         name: 'Get templates'
         outputs:
             templates: ${{ steps.getlist.outputs.templates }}
@@ -37,8 +36,7 @@ jobs:
         runs-on: ubuntu-latest
         name: 'Check'
         strategy:
-            fail-fast: false
-            matrix: ${{ fromJSON( needs.build.outputs.templates ) }}
+            matrix: ${{fromJSON(needs.build.outputs.templates)}}
         steps:
             - name: Simple task
               run: |
