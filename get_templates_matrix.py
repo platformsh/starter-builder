@@ -6,5 +6,5 @@ import os
 dirs=os.listdir("{}/templates".format(os.getcwd()))
 dirs.remove("__init__.py")
 formatted = ['\\"{}\\"'.format(template) for template in dirs]
-final = "{" + "[{0}]".format(", ".join(formatted))+ "}"
+final = '{\\"template\\":' + "[{0}]".format(", ".join(formatted))+ "}"
 print(final)
