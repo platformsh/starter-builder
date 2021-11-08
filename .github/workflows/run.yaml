@@ -18,15 +18,29 @@ jobs:
         runs-on: ubuntu-latest
         name: 'Get templates'
         outputs:
-            templates: ${{ steps.getlist.outputs.templates }}
+            # templates: ${{ steps.getlist.outputs.templates }}
+            # matrix: ${{ steps.sanity.outputs.matrix }}
+            check: ${{ steps.sanity2.outputs.sanityb }}
         steps: 
           - uses: actions/checkout@v2
           - name: Setup Python
             uses: actions/setup-python@v2
             with:
               python-version: 3.9
-          - name: 'Get template list'
-            id: getlist
+          # - name: 'Get template list'
+          #   id: getlist
+          #   run: |
+          #     export TEMPLATES=$(python get_templates_matrix.py)
+          #     echo $TEMPLATES
+          #     echo "::set-output name=templates::$( python get_templates_matrix.py )"
+          # - name: 'Sanity check'
+          #   id: sanity
+          #   run: |
+          #     export TEST='{\"template\":[\"drupal8-govcms8\", \"flask\", \"nextcloud\", \"spring-mvc-maven-mongodb\"]}'
+          #     echo $TEST
+          #     echo "::set-output name=matrix::$( echo "$TEST")"
+          - name: 'Another check'
+            id: sanity2
             run: |
               TEMPLATES=$(python -c '
               import os
@@ -36,17 +50,35 @@ jobs:
               test = {"template": dirs}
               print(json.dumps(dirs))
               ')
-              echo "::set-output name=templates::$TEMPLATES"
+              echo "::set-output name=sanityb::$TEMPLATES"
 
-    check:
+    # check:
+    #     needs: build
+    #     runs-on: ubuntu-latest
+    #     name: 'Check'
+    #     strategy:
+    #         matrix: ${{fromJSON(needs.build.outputs.matrix)}}
+    #     steps:
+    #         - name: Simple task
+    #           run: |
+    #             echo ${{ matrix.template }}
+    # checkb:
+    #     needs: build
+    #     runs-on: ubuntu-latest
+    #     name: 'Checkb'
+    #     strategy:
+    #         matrix: ${{fromJSON(needs.build.outputs.templates)}}
+    #     steps:
+    #         - name: Simple task
+    #           run: |
+    #             echo ${{ matrix.template }}
+    checkc:
         needs: build
         runs-on: ubuntu-latest
-        name: 'Update'
+        name: 'Checkc'
         strategy:
             matrix: 
                 template: ${{fromJSON(needs.build.outputs.check)}}
-                # exclude:
-                #   - template: ['drupal9']
         steps:
             - name: Simple task
               run: |
