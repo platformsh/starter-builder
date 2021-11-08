@@ -1,5 +1,5 @@
 ---
-name: 'Template updates'
+name: 'Updates'
 
 on:
   push:
@@ -17,6 +17,8 @@ jobs:
     build:
         runs-on: ubuntu-latest
         name: 'Get templates'
+        outputs:
+            templates: ${{ steps.getlist.outputs.templates }}
         steps: 
           - uses: actions/checkout@v2
           - name: Setup Python
@@ -24,9 +26,20 @@ jobs:
             with:
               python-version: 3.9
           - name: 'Get template list'
+            id: getlist
             run: |
               TEMPLATES=$(python -c 'import os; dirs=os.listdir("{}/templates".format(os.getcwd())); dirs.remove("__init__.py"); print(dirs)')
-              echo $TEMPLATES
+              echo "::set-output name=templates::$TEMPLATES"
+    check:
+        needs: build
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                template: ${{ needs.build.outputs.templates }}
+        steps:
+            - run: |
+              echo ${{ matrix.template }}
     update:
         needs: build
         runs-on: ubuntu-latest
@@ -78,15 +91,16 @@ jobs:
                     print("no remote")
                 ')
 
+                # Set up Git.
+                cd templates/${{ matrix.template }}/build
+                git config --global user.email "$GIT_EMAIL"
+                git config --global user.name "$GIT_USER"
+
                 if [ "$REMOTE_UPSTREAM" == "no remote" ]; then
                     echo "$TEMPLATE is type Basic. Skipping remote clone."
                 else
                     echo "Upstream found: $REMOTE_UPSTREAM"
-                    cd templates/${{ matrix.template }}/build
                     git remote add project $REMOTE_UPSTREAM
-                    # Set up Git.
-                    git config --global user.email "$GIT_EMAIL"
-                    git config --global user.name "$GIT_USER"
                 fi
             - name: 'Update'
               run: |
