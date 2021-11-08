@@ -35,7 +35,7 @@ jobs:
           - name: 'Sanity check'
             id: sanity
             run: |
-              TEST='{\"template\":[\"drupal8-govcms8\", \"flask\", \"nextcloud\", \"spring-mvc-maven-mongodb\"]}'
+              export TEST='{\"template\":[\"drupal8-govcms8\", \"flask\", \"nextcloud\", \"spring-mvc-maven-mongodb\"]}'
               echo "::set-output name=matrix::$TEST"
 
     check:
