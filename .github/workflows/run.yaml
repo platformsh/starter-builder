@@ -33,7 +33,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-              template: ['drupal9', 'magento2ce', 'wordpress-composer', 'hugo']
+              template: ['drupal9', 'magento2ce', 'hugo']
         name: 'Remotes'
         steps: 
             - uses: actions/checkout@v2
@@ -68,13 +68,26 @@ jobs:
               run: |
                 # Get the remote 
                 export TEMPLATE=${{ matrix.template }}
-                REMOTE_UPSTREAM=$(python -m poetry run python -c 'import dodo; import os; print(dodo.project_factory(os.environ["TEMPLATE"]).remote)')
-                echo "Upstream found: $REMOTE_UPSTREAM"
-                cd templates/${{ matrix.template }}/build
-                git remote add project $REMOTE_UPSTREAM
-                # Set up Git.
-                git config --global user.email "$GIT_EMAIL"
-                git config --global user.name "$GIT_USER"
+
+                REMOTE_UPSTREAM=$(poetry run python -c '
+                import os
+                import dodo
+                try: 
+                    print(dodo.project_factory(os.environ["TEMPLATE"]).remote)
+                except:
+                    print("no remote")
+                ')
+
+                if [ "$REMOTE_UPSTREAM" == "no remote" ]; then
+                    echo "$TEMPLATE is type Basic. Skipping remote clone."
+                else
+                    echo "Upstream found: $REMOTE_UPSTREAM"
+                    cd templates/${{ matrix.template }}/build
+                    git remote add project $REMOTE_UPSTREAM
+                    # Set up Git.
+                    git config --global user.email "$GIT_EMAIL"
+                    git config --global user.name "$GIT_USER"
+                fi
             - name: 'Update'
               run: |
                 python -m poetry run doit update:${{ matrix.template }}
