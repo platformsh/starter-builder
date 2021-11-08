@@ -1,5 +1,5 @@
 ---
-name: 'Drupal 9 updates'
+name: 'Updates'
 
 on:
   push:
@@ -20,8 +20,8 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-              template: ['drupal9', 'wordpress-composer']
-        name: 'Set up starter-builder'
+              template: ['drupal9', 'magento']
+        name: 'Remotes'
         steps: 
             - uses: actions/checkout@v2
             - name: Setup Python
