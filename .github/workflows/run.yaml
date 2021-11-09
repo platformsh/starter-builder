@@ -114,7 +114,7 @@ jobs:
                   - template: 'gatsby-drupal'
                   - template: 'microprofile-payara'
                   - template: 'sculpin'
-                  - template: 'drupal9'
+                  - template: 'hugo'
         steps: 
             - uses: actions/checkout@v2
             - name: Setup Python
