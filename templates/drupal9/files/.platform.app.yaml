@@ -145,3 +145,14 @@ crons:
     drupal:
         spec: '*/19 * * * *'
         cmd: 'cd web ; drush core-cron'
+
+
+source:
+    operations:
+        update:
+            command: |
+                # Run the update
+                composer update
+                # Stage and commit updates.
+                git add .
+                git commit -m "auto-update" --allow-empty
