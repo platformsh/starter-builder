@@ -180,9 +180,9 @@ jobs:
             - name: 'Push'
               run: |
                 python -m poetry run doit push:${{ matrix.template }}
-    #         - name: 'Open pull request'
-    #           run: |
-    #               curl -s --location --request POST --header "Authorization: Bearer $GITHUB_TOKEN" \
-    #                 --header 'Content-Type: application/json' \
-    #                 --data-raw '{"head": "update", "base": "master", "title": "auto-updates"}' \
-    #                 https://api.github.com/repos/$GITHUB_REPOSITORY/pulls
+            - name: 'Open pull request'
+              run: |
+                  curl -s --location --request POST --header "Authorization: Bearer $GITHUB_TOKEN" \
+                    --header 'Content-Type: application/json' \
+                    --data-raw '{"head": "update", "base": "master", "title": "auto-updates"}' \
+                    https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/pulls
