@@ -160,10 +160,12 @@ jobs:
           run: |
             curl -sS https://platform.sh/cli/installer | php
         # TODO: RETRIEVE THE PROJECT ID
-        - name: Get the project ID
-          uses: mikefarah/yq@master
-          with:
-            cmd: cat projects.yaml | yq -r --arg template "${{ matrix.template }}" '.projects[$template]'
+        - uses: actions/checkout@v2
+        - uses: mikefarah/yq@master
+        - name: Get the project ID w yq
+          run: |
+            PROJECT_ID=$(cat projects.yaml | yq -r --arg template "${{ matrix.template }}" '.projects[$template]')
+            echo $PROJECT_ID
         - name: Get the project ID
           id: projectid
           run: |
