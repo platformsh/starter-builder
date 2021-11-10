@@ -149,20 +149,18 @@ jobs:
           if: steps.branchstatus.outputs.status != 'Branch not found'
           run: |
             curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs/heads/$UPDATE_ENVIRONMENT
-            sleep 5
+            sleep 10
 
         # 1. CREATING THE SO-UPDATE BRANCH
         # identify the default branch for the template repo. (outputs: GH repo default branch name)
         - name: Get template default branch
           id: defaultbranch
-          if: steps.branchstatus.outputs.status == 'Branch not found'
           run: |
             # Get the default branch.
             DEFAULT_BRANCH=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }} | jq -r '.default_branch')
             echo "::set-output name=branch::$DEFAULT_BRANCH" 
         # identify commit SHA on the default branch. (outputs: GH repo default branch SHA)
         - name: Get default branch SHA
-          if: steps.branchstatus.outputs.status == 'Branch not found'
           id: defaultsha
           run: |
             DEFAULT_BRANCH=${{ steps.defaultbranch.outputs.branch }}
@@ -172,7 +170,6 @@ jobs:
         # create the update branch on GH. (outputs: none)
         - name: Create update branch
           # only runs if branch does not already exist.
-          if: steps.branchstatus.outputs.status == 'Branch not found'
           run: |
             DEFAULT_BRANCH_SHA=${{ steps.defaultsha.outputs.sha }}
             UPDATE_BRANCH_REF=refs/heads/$UPDATE_ENVIRONMENT
