@@ -201,16 +201,15 @@ jobs:
           with:
             cmd: yq eval '.projects.${{ matrix.template }}' 'projects.yaml'
         # get the status of the Platform.sh environment. (outputs: P.sh env status)
-        - name: Check so-update environment status
-          id: envstatus
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            UPDATE_ENVIRONMENT_STATUS=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '.status')
-            echo $UPDATE_ENVIRONMENT_STATUS
-            echo "::set-output name=status::$UPDATE_ENVIRONMENT_STATUS" 
+        # - name: Check so-update environment status
+        #   id: envstatus
+        #   run: |
+        #     PROJECT_ID=${{ steps.projectid.outputs.result }}
+        #     UPDATE_ENVIRONMENT_STATUS=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '.status')
+        #     echo $UPDATE_ENVIRONMENT_STATUS
+        #     echo "::set-output name=status::$UPDATE_ENVIRONMENT_STATUS" 
         # activate the update environment. (outputs: none)
         - name: Activate so-update environment
-          if: steps.envstatus.outputs.status == 'inactive'
           run: |
             PROJECT_ID=${{ steps.projectid.outputs.result }}
             ~/.platformsh/bin/platform environment:activate $UPDATE_ENVIRONMENT -p $PROJECT_ID -y --no-wait
