@@ -222,6 +222,7 @@ jobs:
         - name: Check activity status
           id: activityresult
           run: |
+            ACTIVITY_ID=${{ steps.getactivity.outputs.id }}
             ACTIVITY_RESULT="pending"
             until [ $ACTIVITY_RESULT == "success" ] || [ $ACTIVITY_RESULT == "failure" ];do
               sleep 10
@@ -236,7 +237,7 @@ jobs:
           if: steps.activityresult.outputs.result == 'success'
           run: |
             PROJECT_ID=${{ steps.projectid.outputs.result }}
-            URL=$(platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
+            URL=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
             STATUS=$(URL=$URL python -m poetry run python get_status.py)
             if [ $STATUS -ne 200 ]; then
               echo "Failed."
