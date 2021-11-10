@@ -149,7 +149,7 @@ jobs:
           if: steps.branchstatus.outputs.status != 'Branch not found'
           run: |
             curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs/heads/$UPDATE_ENVIRONMENT
-            sleep 10
+            sleep 30
 
         # 1. CREATING THE SO-UPDATE BRANCH
         # identify the default branch for the template repo. (outputs: GH repo default branch name)
@@ -212,37 +212,38 @@ jobs:
             ~/.platformsh/bin/platform environment:activate $UPDATE_ENVIRONMENT -p $PROJECT_ID -y --no-wait
 
         # 3. RETRIEVE ENVIRONMENT ACTIVATION
-        # Get the most recent activity. (outputs: activity ID & activity type)
-        - name: Get activity ID & type
+        # Get the most recent activity. (outputs: activity ID)
+        - name: Get activity ID
           id: getactivity
           run: |
             PROJECT_ID=${{ steps.projectid.outputs.result }}
             ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
-            ACTIVITY_TYPE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.type')
             echo "::set-output name=id::$ACTIVITY_ID"
-            echo "::set-output name=type::$ACTIVITY_TYPE"
-        # - name: Check activity status
-        #   if: steps.getactivity.outputs.type == 'environment.activate'
-        #   id: activityresult
-        #   run: |
-        #     ACTIVITY_RESULT="pending"
-        #     until [ $ACTIVITY_RESULT == "success" ] || [ $ACTIVITY_RESULT == "failure" ];do
-        #       sleep 10
-        #       ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
-        #     done
-        #     echo "::set-output name=result::$ACTIVITY_RESULT"
-        # - name: Verify environment
-        #   if: steps.activityresult.outputs.result == 'success'
-        #   run: |
-        #     PROJECT_ID=${{ steps.projectid.outputs.result }}
-        #     URL=$(platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
-        #     STATUS=$(URL=$URL python -m poetry run python get_status.py)
-        #     if [ $STATUS -ne 200 ]; then
-        #       echo "Failed."
-        #       exit 1
-        #     else
-        #       echo "Passed."
-        #     fi
+        - name: Check activity status
+          id: activityresult
+          run: |
+            ACTIVITY_RESULT="pending"
+            until [ $ACTIVITY_RESULT == "success" ] || [ $ACTIVITY_RESULT == "failure" ];do
+              sleep 10
+              ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+            done
+            echo "::set-output name=result::$ACTIVITY_RESULT"
+        - name: Break on activity failure
+          if: steps.activityresult.outputs.result != 'success'
+          run: |
+            exit 1
+        - name: Verify environment
+          if: steps.activityresult.outputs.result == 'success'
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
+            URL=$(platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
+            STATUS=$(URL=$URL python -m poetry run python get_status.py)
+            if [ $STATUS -ne 200 ]; then
+              echo "Failed."
+              exit 1
+            else
+              echo "Passed."
+            fi
 
 
 
