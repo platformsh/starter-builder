@@ -161,6 +161,10 @@ jobs:
             curl -sS https://platform.sh/cli/installer | php
         # TODO: RETRIEVE THE PROJECT ID
         - name: Get the project ID
+          uses: mikefarah/yq@master
+          with:
+            cmd: cat projects.yaml | yq -r --arg template "${{ matrix.template }}" '.projects[$template]'
+        - name: Get the project ID
           id: projectid
           run: |
             echo "::set-output name=id::o3fc5w4n5iumy" 
