@@ -188,7 +188,7 @@ jobs:
         # activate the update environment. (outputs: none)
         - name: Activate so-update environment
           # only runs if environment is not already active.
-          if: steps.envstatus.outputs.status == "inactive"
+          if: steps.envstatus.outputs.status == 'inactive'
           run: |
             PROJECT_ID=${{ steps.projectid.outputs.result }}
             ~/.platformsh/bin/platform environment:activate $UPDATE_ENVIRONMENT -p $PROJECT_ID -y
