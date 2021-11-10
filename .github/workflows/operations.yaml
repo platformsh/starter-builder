@@ -149,7 +149,7 @@ jobs:
           if: steps.branchstatus.outputs.status != 'Branch not found'
           run: |
             curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs/heads/$UPDATE_ENVIRONMENT
-            sleep 30
+            sleep 60
 
         # 1. CREATING THE SO-UPDATE BRANCH
         # identify the default branch for the template repo. (outputs: GH repo default branch name)
@@ -222,11 +222,13 @@ jobs:
         - name: Check activity status
           id: activityresult
           run: |
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
             ACTIVITY_ID=${{ steps.getactivity.outputs.id }}
             ACTIVITY_RESULT="pending"
             until [ $ACTIVITY_RESULT == "success" ] || [ $ACTIVITY_RESULT == "failure" ];do
               sleep 10
               ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+              echo "Activity status: $ACTIVITY_RESULT"
             done
             echo "::set-output name=result::$ACTIVITY_RESULT"
         - name: Break on activity failure
