@@ -142,6 +142,7 @@ jobs:
         - name: Create update branch
           id: branches
           if: steps.branchstatus.outputs.status == 'Branch not found'
+          run: |
             DEFAULT_BRANCH_SHA=${{ steps.defaultsha.outputs.sha }}
             UPDATE_BRANCH_REF=refs/heads/$UPDATE_ENVIRONMENT
             echo "Creating $UPDATE_BRANCH_REF from $DEFAULT_BRANCH_SHA"
@@ -149,6 +150,7 @@ jobs:
                         --arg ref "$UPDATE_BRANCH_REF" \
                         --arg sha "$DEFAULT_BRANCH_SHA" \
                         '{ref: $ref, sha: $sha}' )
+
             curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" \
                 -d "$DATA" \
                 https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs
@@ -172,46 +174,46 @@ jobs:
           run: |
             PROJECT_ID=${{ steps.projectid.outputs.id }}
             ~/.platformsh/bin/platform environment:activate $UPDATE_ENVIRONMENT -p $PROJECT_ID -y --no-wait
-        # TODO: WAIT FOR ENVIRONMENT TO ACTIVATE.
-        - name: Wait for environment to activate
-          run: |
-            echo 'do something'
-        # TODO: RUN A STATUS TEST ON THE ENVIRONMENT
-        - name: Verify active update environment
-          run: |
-            echo 'do something'
-        - name: Run source operation
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.id }}
-            ~/.platformsh/bin/platform source-operation:run $OPERATION_NAME -p $PROJECT_ID -e $UPDATE_ENVIRONMENT
-        # TODO: WAIT FOR ENVIRONMENT TO DEPLOY.
-        - name: Wait for environment to deploy
-          run: |
-            echo 'do something'
-        # TODO: RUN A STATUS TEST ON THE ENVIRONMENT
-        - name: Verify updated environment deployment
-          run: |
-            echo 'do something'
-        - name: 'Open pull request'
-          run: |
-              DATA=$( jq -n \
-                  --arg head "$UPDATE_ENVIRONMENT"
-                  --arg base "${{ steps.defaultbranch.outputs.branch }}" \
-                  --arg title "update source op tests" \
-                  '{head: $head, base: $base, title: $title}' )
-              curl -s --location --request POST --header "Authorization: Bearer $GITHUB_TOKEN" \
-                --header 'Content-Type: application/json' \
-                --data-raw "$DATA" \
-                https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/pulls
-        # TODO: WAIT FOR PR ENVIRONMENT TO DEPLOY.
-        - name: Wait for PR environment to deploy
-          run: |
-            echo 'do something'
-        # TODO: RUN A STATUS TEST ON THE PR ENVIRONMENT
-        - name: Verify updated environment deployment
-          run: |
-            echo 'do something'
-        # TODO: MERGE THE PR ENVIRONMENT
-        - name: Verify updated environment deployment
-          run: |
-            echo 'do something'
+        # # TODO: WAIT FOR ENVIRONMENT TO ACTIVATE.
+        # - name: Wait for environment to activate
+        #   run: |
+        #     echo 'do something'
+        # # TODO: RUN A STATUS TEST ON THE ENVIRONMENT
+        # - name: Verify active update environment
+        #   run: |
+        #     echo 'do something'
+        # - name: Run source operation
+        #   run: |
+        #     PROJECT_ID=${{ steps.projectid.outputs.id }}
+        #     ~/.platformsh/bin/platform source-operation:run $OPERATION_NAME -p $PROJECT_ID -e $UPDATE_ENVIRONMENT
+        # # TODO: WAIT FOR ENVIRONMENT TO DEPLOY.
+        # - name: Wait for environment to deploy
+        #   run: |
+        #     echo 'do something'
+        # # TODO: RUN A STATUS TEST ON THE ENVIRONMENT
+        # - name: Verify updated environment deployment
+        #   run: |
+        #     echo 'do something'
+        # - name: 'Open pull request'
+        #   run: |
+        #       DATA=$( jq -n \
+        #           --arg head "$UPDATE_ENVIRONMENT"
+        #           --arg base "${{ steps.defaultbranch.outputs.branch }}" \
+        #           --arg title "update source op tests" \
+        #           '{head: $head, base: $base, title: $title}' )
+        #       curl -s --location --request POST --header "Authorization: Bearer $GITHUB_TOKEN" \
+        #         --header 'Content-Type: application/json' \
+        #         --data-raw "$DATA" \
+        #         https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/pulls
+        # # TODO: WAIT FOR PR ENVIRONMENT TO DEPLOY.
+        # - name: Wait for PR environment to deploy
+        #   run: |
+        #     echo 'do something'
+        # # TODO: RUN A STATUS TEST ON THE PR ENVIRONMENT
+        # - name: Verify updated environment deployment
+        #   run: |
+        #     echo 'do something'
+        # # TODO: MERGE THE PR ENVIRONMENT
+        # - name: Verify updated environment deployment
+        #   run: |
+        #     echo 'do something'
