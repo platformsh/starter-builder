@@ -13,8 +13,6 @@ env:
     OPERATION_NAME: update
     GITHUB_TOKEN: ${{ secrets.DEVREL_TOKEN }}
     PLATFORMSH_CLI_TOKEN: ${{ secrets.PSH_CLI_TOKEN }}
-    # GIT_EMAIL: ${{ secrets.DEVREL_EMAIL }}
-    # GIT_USER: ${{ secrets.DEVREL_USER }}
 
 jobs:
     build:
@@ -28,23 +26,6 @@ jobs:
             uses: actions/setup-python@v2
             with:
               python-version: 3.9
-          # - name: Install Poetry
-          #   run: |
-          #     python -m pip install poetry==1.1.11
-          # - name: Configure Poetry
-          #   run: |
-          #     python -m poetry config virtualenvs.in-project true
-          # - name: Cache the virtualenv
-          #   uses: actions/cache@v2
-          #   with:
-          #     path: ./.venv
-          #     key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
-          # - name: Install dependencies
-          #   run: |
-          #     python -m poetry install
-          # - name: Install Platform.sh CLI
-          #   run: |
-          #     curl -sS https://platform.sh/cli/installer | php
           - name: 'Get template list'
             id: getlist
             run: |
@@ -188,7 +169,6 @@ jobs:
         - name: Install Platform.sh CLI
           run: |
             curl -sS https://platform.sh/cli/installer | php
-
         # get the project ID for the template repo. (outputs: project_id)
         # ! TODO: IMPROVE GETTING PROJECT_ID - consequence of P.sh + GH integration = service hook, not webhook. See projects.yaml for details.
         - uses: actions/checkout@v2
@@ -197,14 +177,6 @@ jobs:
           uses: mikefarah/yq@master
           with:
             cmd: yq eval '.projects.${{ matrix.template }}' 'projects.yaml'
-        # get the status of the Platform.sh environment. (outputs: P.sh env status)
-        # - name: Check so-update environment status
-        #   id: envstatus
-        #   run: |
-        #     PROJECT_ID=${{ steps.projectid.outputs.result }}
-        #     UPDATE_ENVIRONMENT_STATUS=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '.status')
-        #     echo $UPDATE_ENVIRONMENT_STATUS
-        #     echo "::set-output name=status::$UPDATE_ENVIRONMENT_STATUS" 
         # activate the update environment. (outputs: none)
         - name: Activate so-update environment
           run: |
@@ -265,60 +237,71 @@ jobs:
               echo "Passed."
             fi
 
-        # # 5. RUN THE OPERATION
-        # - name: Run source operation
-        #   run: |
-        #     PROJECT_ID=${{ steps.projectid.outputs.result }}
-        #     ~/.platformsh/bin/platform source-operation:run $OPERATION_NAME -p $PROJECT_ID -e $UPDATE_ENVIRONMENT
+        # 5. RUN THE OPERATION
+        - name: Run source operation
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
+            ~/.platformsh/bin/platform source-operation:run $OPERATION_NAME -p $PROJECT_ID -e $UPDATE_ENVIRONMENT --no-wait
 
+        # 6. FOLLOW UP ON THE SOURCE OPERATION
+        - name: Get activity ID
+          id: getSOactivity
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
+            ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
+            echo "::set-output name=id::$ACTIVITY_ID"
+        - name: Check activity status
+          id: activitySOresult
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
+            ACTIVITY_ID=${{ steps.getSOactivity.outputs.id }}
+            ACTIVITY_STATE="in_progress"
+            until [ $ACTIVITY_STATE == "complete" ];do
+              sleep 10
+              ACTIVITY_STATE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.state')
+              echo "Activity state: $ACTIVITY_STATE"
+            done
+            ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+            echo "::set-output name=result::$ACTIVITY_RESULT"
+        - name: Break on activity failure
+          if: steps.activitySOresult.outputs.result != 'success'
+          run: |
+            exit 1
 
+        # 7. FOLLOW UP ON THE SO COMMIT
+        - name: Get Commit activity ID
+          id: getCommitactivity
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
+            ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
+            echo "::set-output name=id::$ACTIVITY_ID"
+        - name: Check activity status
+          id: activityCommitresult
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
+            ACTIVITY_ID=${{ steps.getCommitactivity.outputs.id }}
+            ACTIVITY_STATE="in_progress"
+            until [ $ACTIVITY_STATE == "complete" ];do
+              sleep 10
+              ACTIVITY_STATE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.state')
+              echo "Activity state: $ACTIVITY_STATE"
+            done
+            ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+            echo "::set-output name=result::$ACTIVITY_RESULT"
+        - name: Break on activity failure
+          if: steps.activityCommitresult.outputs.result != 'success'
+          run: |
+            exit 1
+        - name: Verify environment
+          if: steps.activityCommitresult.outputs.result == 'success'
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
+            URL=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
+            STATUS=$(URL=$URL python -m poetry run python get_status.py)
+            if [ $STATUS -ne 200 ]; then
+              echo "Failed."
+              exit 1
+            else
+              echo "Passed."
+            fi
 
-        # - name: Check activity 
-
-
-        # sync an already active environment
-        # platform environment:sync -p o3fc5w4n5iumy -e so-updates code data -y --no-wait
-
-        # # TODO: WAIT FOR ENVIRONMENT TO ACTIVATE.
-        # - name: Wait for environment to activate
-        #   run: |
-        #     echo 'do something'
-        # # TODO: RUN A STATUS TEST ON THE ENVIRONMENT
-        # - name: Verify active update environment
-        #   run: |
-        #     echo 'do something'
-        # - name: Run source operation
-        #   run: |
-        #     PROJECT_ID=${{ steps.projectid.outputs.id }}
-        #     ~/.platformsh/bin/platform source-operation:run $OPERATION_NAME -p $PROJECT_ID -e $UPDATE_ENVIRONMENT
-        # # TODO: WAIT FOR ENVIRONMENT TO DEPLOY.
-        # - name: Wait for environment to deploy
-        #   run: |
-        #     echo 'do something'
-        # # TODO: RUN A STATUS TEST ON THE ENVIRONMENT
-        # - name: Verify updated environment deployment
-        #   run: |
-        #     echo 'do something'
-        # - name: 'Open pull request'
-        #   run: |
-        #       DATA=$( jq -n \
-        #           --arg head "$UPDATE_ENVIRONMENT"
-        #           --arg base "${{ steps.defaultbranch.outputs.branch }}" \
-        #           --arg title "update source op tests" \
-        #           '{head: $head, base: $base, title: $title}' )
-        #       curl -s --location --request POST --header "Authorization: Bearer $GITHUB_TOKEN" \
-        #         --header 'Content-Type: application/json' \
-        #         --data-raw "$DATA" \
-        #         https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/pulls
-        # # TODO: WAIT FOR PR ENVIRONMENT TO DEPLOY.
-        # - name: Wait for PR environment to deploy
-        #   run: |
-        #     echo 'do something'
-        # # TODO: RUN A STATUS TEST ON THE PR ENVIRONMENT
-        # - name: Verify updated environment deployment
-        #   run: |
-        #     echo 'do something'
-        # # TODO: MERGE THE PR ENVIRONMENT
-        # - name: Verify updated environment deployment
-        #   run: |
-        #     echo 'do something'
