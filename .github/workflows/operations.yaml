@@ -42,6 +42,9 @@ jobs:
           - name: Install dependencies
             run: |
               python -m poetry install
+          - name: Install Platform.sh CLI
+            run: |
+              curl -sS https://platform.sh/cli/installer | php
           - name: 'Get template list'
             id: getlist
             run: |
@@ -185,9 +188,10 @@ jobs:
 
         # 2. ACTIVATING THE SO UPDATE ENVIRONMENT
         # install Platform.sh CLI. (outputs: none)
-        - name: Install Platform.sh CLI
-          run: |
-            curl -sS https://platform.sh/cli/installer | php
+        # - name: Install Platform.sh CLI
+        #   run: |
+        #     curl -sS https://platform.sh/cli/installer | php
+
         # get the project ID for the template repo. (outputs: project_id)
         # ! TODO: IMPROVE GETTING PROJECT_ID - consequence of P.sh + GH integration = service hook, not webhook. See projects.yaml for details.
         - uses: actions/checkout@v2
@@ -202,6 +206,7 @@ jobs:
           run: |
             PROJECT_ID=${{ steps.projectid.outputs.result }}
             UPDATE_ENVIRONMENT_STATUS=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '.status')
+            echo $UPDATE_ENVIRONMENT_STATUS
             echo "::set-output name=status::$UPDATE_ENVIRONMENT_STATUS" 
         # activate the update environment. (outputs: none)
         - name: Activate so-update environment
@@ -220,28 +225,28 @@ jobs:
             ACTIVITY_TYPE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.type')
             echo "::set-output name=id::$ACTIVITY_ID"
             echo "::set-output name=type::$ACTIVITY_TYPE"
-        - name: Check activity status
-          if: steps.getactivity.outputs.type == 'environment.activate'
-          id: activityresult
-          run: |
-            ACTIVITY_RESULT="pending"
-            until [ $ACTIVITY_RESULT == "success"] || [ $ACTIVITY_RESULT == "failure"];do
-              sleep 10
-              ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
-            done
-            echo "::set-output name=result::$ACTIVITY_RESULT"
-        - name: Verify environment
-          if: steps.activityresult.outputs.result == 'success'
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            URL=$(platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
-            STATUS=$(URL=$URL python -m poetry run python get_status.py)
-            if [ $STATUS -ne 200 ]; then
-              echo "Failed."
-              exit 1
-            else
-              echo "Passed."
-            fi
+        # - name: Check activity status
+        #   if: steps.getactivity.outputs.type == 'environment.activate'
+        #   id: activityresult
+        #   run: |
+        #     ACTIVITY_RESULT="pending"
+        #     until [ $ACTIVITY_RESULT == "success" ] || [ $ACTIVITY_RESULT == "failure" ];do
+        #       sleep 10
+        #       ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+        #     done
+        #     echo "::set-output name=result::$ACTIVITY_RESULT"
+        # - name: Verify environment
+        #   if: steps.activityresult.outputs.result == 'success'
+        #   run: |
+        #     PROJECT_ID=${{ steps.projectid.outputs.result }}
+        #     URL=$(platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
+        #     STATUS=$(URL=$URL python -m poetry run python get_status.py)
+        #     if [ $STATUS -ne 200 ]; then
+        #       echo "Failed."
+        #       exit 1
+        #     else
+        #       echo "Passed."
+        #     fi
 
 
 
