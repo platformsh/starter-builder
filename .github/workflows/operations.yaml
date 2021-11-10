@@ -162,30 +162,19 @@ jobs:
         # TODO: RETRIEVE THE PROJECT ID
         - uses: actions/checkout@v2
         - name: Get Project ID w yq
-          id: lookupSdkVersion
+          id: projectid
           uses: mikefarah/yq@master
           with:
             cmd: yq eval '.projects.${{ matrix.template }}' 'projects.yaml'
-        # - uses: mikefarah/yq@master
-        # - name: Get the project ID w yq
-        #   run: |
-        #     PROJECT_ID=$(cat projects.yaml | yq -r --arg template "${{ matrix.template }}" '.projects[$template]')
-        #     echo $PROJECT_ID
-        - name: Get the project ID
-          id: projectid
-          run: |
-            echo "Test yq"
-            echo ${{ steps.lookupSdkVersion.outputs.result }}
-            echo "::set-output name=id::o3fc5w4n5iumy" 
         - name: Check so-update environment status
           id: envstatus
           run: |
-            PROJECT_ID=${{ steps.projectid.outputs.id }}
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
             UPDATE_ENVIRONMENT_STATUS=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '.status')
             echo "::set-output name=sha::$UPDATE_ENVIRONMENT_STATUS" 
         - name: Activate so-update environment
           run: |
-            PROJECT_ID=${{ steps.projectid.outputs.id }}
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
             ~/.platformsh/bin/platform environment:activate $UPDATE_ENVIRONMENT -p $PROJECT_ID -y --no-wait
         # # TODO: WAIT FOR ENVIRONMENT TO ACTIVATE.
         # - name: Wait for environment to activate
