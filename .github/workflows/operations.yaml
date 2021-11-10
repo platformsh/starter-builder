@@ -119,18 +119,26 @@ jobs:
                   - template: 'sculpin'
                   - template: 'hugo'
         steps: 
-        - name: Verify source operation branch exists
+
+        # 1. CREATING THE SO-UPDATE BRANCH
+        # check if the branch already exists. (outputs: GH branch message)
+        - name: Chack if SO branch exists on GH
           id: branchstatus
           run: |
             STATUS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$UPDATE_ENVIRONMENT)
             echo "::set-output name=status::$( echo $STATUS | jq -r '.message' )"
+        # identify the default branch for the template repo. (outputs: GH repo default branch name)
         - name: Get template default branch
           id: defaultbranch
+          # only runs if branch does not already exist.
+          if: steps.branchstatus.outputs.status == 'Branch not found'
           run: |
             # Get the default branch.
             DEFAULT_BRANCH=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }} | jq -r '.default_branch')
             echo "::set-output name=branch::$DEFAULT_BRANCH" 
+        # identify commit SHA on the default branch. (outputs: GH repo default branch SHA)
         - name: Get default branch SHA
+          # only runs if branch does not already exist.
           if: steps.branchstatus.outputs.status == 'Branch not found'
           id: defaultsha
           run: |
@@ -139,8 +147,9 @@ jobs:
             # Get the default branch SHA.
             SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$DEFAULT_BRANCH)
             echo "::set-output name=sha::$( echo $SHA | jq -r '.commit.sha' )" 
+        # create the update branch on GH. (outputs: none)
         - name: Create update branch
-          id: branches
+          # only runs if branch does not already exist.
           if: steps.branchstatus.outputs.status == 'Branch not found'
           run: |
             DEFAULT_BRANCH_SHA=${{ steps.defaultsha.outputs.sha }}
@@ -155,27 +164,62 @@ jobs:
                 -d "$DATA" \
                 https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs
             sleep 5
-            echo "::set-output name=sha::$( echo $SHA | jq -r '.commit.sha' )"
+
+        # 2. ACTIVATING THE SO UPDATE ENVIRONMENT
+        # install Platform.sh CLI. (outputs: none)
         - name: Install Platform.sh CLI
           run: |
             curl -sS https://platform.sh/cli/installer | php
-        # TODO: RETRIEVE THE PROJECT ID
+        # get the project ID for the template repo. (outputs: project_id)
+        # ! TODO: IMPROVE GETTING PROJECT_ID - consequence of P.sh + GH integration = service hook, not webhook. See projects.yaml for details.
         - uses: actions/checkout@v2
         - name: Get Project ID w yq
           id: projectid
           uses: mikefarah/yq@master
           with:
             cmd: yq eval '.projects.${{ matrix.template }}' 'projects.yaml'
+        # get the status of the Platform.sh environment. (outputs: P.sh env status)
         - name: Check so-update environment status
           id: envstatus
           run: |
             PROJECT_ID=${{ steps.projectid.outputs.result }}
             UPDATE_ENVIRONMENT_STATUS=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '.status')
-            echo "::set-output name=sha::$UPDATE_ENVIRONMENT_STATUS" 
+            echo "::set-output name=status::$UPDATE_ENVIRONMENT_STATUS" 
+        # activate the update environment. (outputs: none)
         - name: Activate so-update environment
+          # only runs if environment is not already active.
+          if: steps.envstatus.outputs.status == "inactive"
           run: |
             PROJECT_ID=${{ steps.projectid.outputs.result }}
-            ~/.platformsh/bin/platform environment:activate $UPDATE_ENVIRONMENT -p $PROJECT_ID -y --no-wait
+            ~/.platformsh/bin/platform environment:activate $UPDATE_ENVIRONMENT -p $PROJECT_ID -y
+            sleep 5
+
+        # 3. RETRIEVE ENVIRONMENT ACTIVATION
+        # Get the most recent activity. (outputs: activity ID & activity type)
+        # - name: Get activity ID & type
+        #   id: getactivity
+        #   run: |
+        #     PROJECT_ID=${{ steps.projectid.outputs.result }}
+        #     ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
+        #     ACTIVITY_TYPE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.type')
+        #     echo "::set-output name=id::$ACTIVITY_ID"
+        #     echo "::set-output name=type::$ACTIVITY_TYPE"
+        # - name: Check activity status
+        #   if: steps.getactivity.outputs.type == 'environment.activate'
+        #   id: activityresult
+        #   run: |
+        #     ACTIVITY_RESULT="pending"
+        #     until [ $ACTIVITY_RESULT == "success"] || [ $ACTIVITY_RESULT == "failure"];do
+        #       sleep 10
+        #       ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+        #     done
+        #     echo "::set-output name=result::$ACTIVITY_RESULT"
+        # - name: Check activity 
+
+
+        # sync an already active environment
+        # platform environment:sync -p o3fc5w4n5iumy -e so-updates code data -y --no-wait
+
         # # TODO: WAIT FOR ENVIRONMENT TO ACTIVATE.
         # - name: Wait for environment to activate
         #   run: |
