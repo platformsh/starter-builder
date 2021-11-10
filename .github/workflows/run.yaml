@@ -110,11 +110,12 @@ jobs:
                   - template: 'rails'
                   - template: 'aspnet-core'
                   - template: 'gin'
-                  - template: 'directus'
+                  - template: 'drupal9'
                   - template: 'gatsby-drupal'
                   - template: 'microprofile-payara'
                   - template: 'sculpin'
                   - template: 'hugo'
+                  - template: 'directus'
         steps: 
             - uses: actions/checkout@v2
             - name: Setup Python
@@ -181,6 +182,10 @@ jobs:
             - name: 'Push'
               run: |
                 python -m poetry run doit push:${{ matrix.template }}
+            # TODO: retrieve the default branch for `base` attribute
+            # TODO: workflow variable for title
+            # TODO: description? tags?
+            # TODO: workflow variable for update branch name
             - name: 'Open pull request'
               run: |
                   curl -s --location --request POST --header "Authorization: Bearer $GITHUB_TOKEN" \

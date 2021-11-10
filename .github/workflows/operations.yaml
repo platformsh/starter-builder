@@ -1,0 +1,217 @@
+---
+name: 'Source operation checks'
+
+on:
+  push:
+    branches-ignore:
+      - 'main'
+#   schedule:
+#     - cron:  "42 7 15 * *" #build project on the 15th day of every month on the 42nd minute of the 7th hour.
+
+env:
+    UPDATE_ENVIRONMENT: so-updates
+    OPERATION_NAME: update
+    GITHUB_TOKEN: ${{ secrets.DEVREL_TOKEN }}
+    PLATFORMSH_CLI_TOKEN: ${{ secrets.PSH_CLI_TOKEN }}
+    # GIT_EMAIL: ${{ secrets.DEVREL_EMAIL }}
+    # GIT_USER: ${{ secrets.DEVREL_USER }}
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        name: 'Get templates'
+        outputs:
+            templates: ${{ steps.getlist.outputs.templates }}
+        steps: 
+          - uses: actions/checkout@v2
+          - name: Setup Python
+            uses: actions/setup-python@v2
+            with:
+              python-version: 3.9
+          - name: 'Get template list'
+            id: getlist
+            run: |
+              TEMPLATES=$(python -c '
+              import os
+              import json
+              dirs=os.listdir("{}/templates".format(os.getcwd()))
+              dirs.remove("__init__.py")
+              test = {"template": dirs}
+              print(json.dumps(dirs))
+              ')
+              echo "::set-output name=templates::$TEMPLATES"
+    test:
+        needs: build
+        runs-on: ubuntu-latest
+        name: 'SO Update test'
+        strategy:
+            fail-fast: false
+            matrix: 
+                template: ${{fromJSON(needs.build.outputs.templates)}}
+                exclude:
+                  - template: 'nuxtjs'
+                  - template: 'pimcore'
+                  - template: 'django3'
+                  - template: 'microprofile-wildfly'
+                  - template: 'symfony5'
+                  - template: 'django2'
+                  - template: 'gatsby-strapi'
+                  - template: 'drupal8-opigno'
+                  - template: 'echo'
+                  - template: 'python3'
+                  - template: 'nextjs'
+                  - template: 'express'
+                  - template: 'drupal8'
+                  - template: 'spring-kotlin'
+                  - template: 'eleventy-strapi'
+                  - template: 'koa'
+                  - template: 'microprofile-openliberty'
+                  - template: 'gatsby-wordpress'
+                  - template: 'pyramid'
+                  - template: 'mattermost'
+                  - template: 'backdrop'
+                  - template: 'golang'
+                  - template: 'wordpress-woocommerce'
+                  - template: 'strapi'
+                  - template: 'magento2ce'
+                  - template: 'nextcloud'
+                  - template: 'microprofile-helidon'
+                  - template: 'python3-uwsgi'
+                  - template: 'beego'
+                  - template: 'meilisearch'
+                  - template: 'django3'
+                  - template: 'gatsby'
+                  - template: 'microprofile-tomee'
+                  - template: 'akeneo'
+                  - template: 'symfony4'
+                  - template: 'microprofile-kumuluzee'
+                  - template: 'nodejs'
+                  - template: 'wordpress-bedrock'
+                  - template: 'tomcat'
+                  - template: 'typo3'
+                  - template: 'wordpress-vanilla'
+                  - template: 'elastic-apm'
+                  - template: 'probot'
+                  - template: 'flask'
+                  - template: 'drupal8-multisite'
+                  - template: 'jetty'
+                  - template: 'lisp'
+                  - template: 'spring-boot-gradle-mysql'
+                  - template: 'drupal8-govcms8'
+                  - template: 'wagtail'
+                  - template: 'php'
+                  - template: 'jenkins'
+                  - template: 'microprofile-thorntail'
+                  - template: 'laravel'
+                  - template: 'quarkus'
+                  - template: 'xwiki'
+                  - template: 'spring-boot-maven-mysql'
+                  - template: 'spring-mvc-maven-mongodb'
+                  - template: 'micronaut'
+                  - template: 'pelican'
+                  - template: 'wordpress-composer'
+                  - template: 'rails'
+                  - template: 'aspnet-core'
+                  - template: 'gin'
+                  - template: 'drupal9'
+                  - template: 'gatsby-drupal'
+                  - template: 'microprofile-payara'
+                  - template: 'sculpin'
+                  - template: 'hugo'
+        steps: 
+        - name: Verify source operation branch exists
+          id: branchstatus
+          run: |
+            STATUS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$UPDATE_ENVIRONMENT)
+            echo "::set-output name=status::$( echo $STATUS | jq -r '.message' )"
+        - name: Get template default branch
+          id: defaultbranch
+          run: |
+            # Get the default branch.
+            DEFAULT_BRANCH=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }} | jq -r '.default_branch')
+            echo "::set-output name=branch::$DEFAULT_BRANCH" 
+        - name: Get default branch SHA
+          if: steps.branchstatus.outputs.status == 'Branch not found'
+          id: defaultsha
+          run: |
+            # Get the default branch.
+            DEFAULT_BRANCH=${{ steps.defaultbranch.outputs.branch }}
+            # Get the default branch SHA.
+            SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$DEFAULT_BRANCH)
+            echo "::set-output name=sha::$( echo $SHA | jq -r '.commit.sha' )" 
+        - name: Create update branch
+          id: branches
+          if: steps.branchstatus.outputs.status == 'Branch not found'
+            DEFAULT_BRANCH_SHA=${{ steps.defaultsha.outputs.sha }}
+            UPDATE_BRANCH_REF=refs/heads/$UPDATE_ENVIRONMENT
+            echo "Creating $UPDATE_BRANCH_REF from $DEFAULT_BRANCH_SHA"
+            DATA=$( jq -n \
+                        --arg ref "$UPDATE_BRANCH_REF" \
+                        --arg sha "$DEFAULT_BRANCH_SHA" \
+                        '{ref: $ref, sha: $sha}' )
+            curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" \
+                -d "$DATA" \
+                https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs
+            sleep 5
+            echo "::set-output name=sha::$( echo $SHA | jq -r '.commit.sha' )"
+        - name: Install Platform.sh CLI
+          run: |
+            curl -sS https://platform.sh/cli/installer | php
+        # TODO: RETRIEVE THE PROJECT ID
+        - name: Get the project ID
+          id: projectid
+          run: |
+            echo "::set-output name=id::o3fc5w4n5iumy" 
+        - name: Check so-update environment status
+          id: envstatus
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.id }}
+            UPDATE_ENVIRONMENT_STATUS=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '.status')
+            echo "::set-output name=sha::$UPDATE_ENVIRONMENT_STATUS" 
+        - name: Activate so-update environment
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.id }}
+            ~/.platformsh/bin/platform environment:activate $UPDATE_ENVIRONMENT -p $PROJECT_ID -y --no-wait
+        # TODO: WAIT FOR ENVIRONMENT TO ACTIVATE.
+        - name: Wait for environment to activate
+          run: |
+            echo 'do something'
+        # TODO: RUN A STATUS TEST ON THE ENVIRONMENT
+        - name: Verify active update environment
+          run: |
+            echo 'do something'
+        - name: Run source operation
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.id }}
+            ~/.platformsh/bin/platform source-operation:run $OPERATION_NAME -p $PROJECT_ID -e $UPDATE_ENVIRONMENT
+        # TODO: WAIT FOR ENVIRONMENT TO DEPLOY.
+        - name: Wait for environment to deploy
+          run: |
+            echo 'do something'
+        # TODO: RUN A STATUS TEST ON THE ENVIRONMENT
+        - name: Verify updated environment deployment
+          run: |
+            echo 'do something'
+        - name: 'Open pull request'
+          run: |
+              DATA=$( jq -n \
+                  --arg head "$UPDATE_ENVIRONMENT"
+                  --arg base "${{ steps.defaultbranch.outputs.branch }}" \
+                  --arg title "update source op tests" \
+                  '{head: $head, base: $base, title: $title}' )
+              curl -s --location --request POST --header "Authorization: Bearer $GITHUB_TOKEN" \
+                --header 'Content-Type: application/json' \
+                --data-raw "$DATA" \
+                https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/pulls
+        # TODO: WAIT FOR PR ENVIRONMENT TO DEPLOY.
+        - name: Wait for PR environment to deploy
+          run: |
+            echo 'do something'
+        # TODO: RUN A STATUS TEST ON THE PR ENVIRONMENT
+        - name: Verify updated environment deployment
+          run: |
+            echo 'do something'
+        # TODO: MERGE THE PR ENVIRONMENT
+        - name: Verify updated environment deployment
+          run: |
+            echo 'do something'
