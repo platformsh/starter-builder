@@ -42,9 +42,9 @@ jobs:
           - name: Install dependencies
             run: |
               python -m poetry install
-          - name: Install Platform.sh CLI
-            run: |
-              curl -sS https://platform.sh/cli/installer | php
+          # - name: Install Platform.sh CLI
+          #   run: |
+          #     curl -sS https://platform.sh/cli/installer | php
           - name: 'Get template list'
             id: getlist
             run: |
@@ -188,9 +188,9 @@ jobs:
 
         # 2. ACTIVATING THE SO UPDATE ENVIRONMENT
         # install Platform.sh CLI. (outputs: none)
-        # - name: Install Platform.sh CLI
-        #   run: |
-        #     curl -sS https://platform.sh/cli/installer | php
+        - name: Install Platform.sh CLI
+          run: |
+            curl -sS https://platform.sh/cli/installer | php
 
         # get the project ID for the template repo. (outputs: project_id)
         # ! TODO: IMPROVE GETTING PROJECT_ID - consequence of P.sh + GH integration = service hook, not webhook. See projects.yaml for details.
