@@ -161,14 +161,21 @@ jobs:
             curl -sS https://platform.sh/cli/installer | php
         # TODO: RETRIEVE THE PROJECT ID
         - uses: actions/checkout@v2
-        - uses: mikefarah/yq@master
-        - name: Get the project ID w yq
-          run: |
-            PROJECT_ID=$(cat projects.yaml | yq -r --arg template "${{ matrix.template }}" '.projects[$template]')
-            echo $PROJECT_ID
+        - name: Get Project ID w yq
+          id: lookupSdkVersion
+          uses: mikefarah/yq@master
+          with:
+            cmd: yq eval '.projects.${{ matrix.template }}' 'projects.yaml'
+        # - uses: mikefarah/yq@master
+        # - name: Get the project ID w yq
+        #   run: |
+        #     PROJECT_ID=$(cat projects.yaml | yq -r --arg template "${{ matrix.template }}" '.projects[$template]')
+        #     echo $PROJECT_ID
         - name: Get the project ID
           id: projectid
           run: |
+            echo "Test yq"
+            echo ${{ steps.lookupSdkVersion.outputs.result }}
             echo "::set-output name=id::o3fc5w4n5iumy" 
         - name: Check so-update environment status
           id: envstatus
