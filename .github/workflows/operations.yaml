@@ -166,6 +166,7 @@ jobs:
 
         # 2. ACTIVATING THE SO UPDATE ENVIRONMENT
         # install Platform.sh CLI. (outputs: none)
+        - uses: actions/checkout@v2
         - name: Install Platform.sh CLI
           run: |
             curl -sS https://platform.sh/cli/installer | php
