@@ -209,14 +209,18 @@ jobs:
         - name: Check activity status
           id: activityresult
           run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            ACTIVITY_ID=${{ steps.getactivity.outputs.id }}
-            ACTIVITY_STATE="in_progress"
-            until [ $ACTIVITY_STATE == "complete" ];do
-              sleep 10
-              ACTIVITY_STATE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.state')
-              echo "Activity state: $ACTIVITY_STATE"
-            done
+            # PROJECT_ID=${{ steps.projectid.outputs.result }}
+            # ACTIVITY_ID=${{ steps.getactivity.outputs.id }}
+
+            # ACTIVITY_STATE="in_progress"
+            # until [ $ACTIVITY_STATE == "complete" ];do
+            #   sleep 10
+            #   ACTIVITY_STATE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.state')
+            #   echo "Activity state: $ACTIVITY_STATE"
+            # done
+
+            ./wait_for_activity_complete.sh
+
             ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
             echo "::set-output name=result::$ACTIVITY_RESULT"
         - name: Break on activity failure
@@ -244,6 +248,7 @@ jobs:
           run: |
             PROJECT_ID=${{ steps.projectid.outputs.result }}
             URL=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
+
             STATUS=$(URL=$URL python -m poetry run python get_status.py)
             if [ $STATUS -ne 200 ]; then
               echo "Failed."
@@ -270,6 +275,7 @@ jobs:
           run: |
             PROJECT_ID=${{ steps.projectid.outputs.result }}
             ACTIVITY_ID=${{ steps.getSOactivity.outputs.id }}
+
             ACTIVITY_STATE="in_progress"
             until [ $ACTIVITY_STATE == "complete" ];do
               sleep 10
@@ -277,6 +283,7 @@ jobs:
               echo "Activity state: $ACTIVITY_STATE"
             done
             ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+            
             echo "::set-output name=result::$ACTIVITY_RESULT"
         - name: Break on activity failure
           if: steps.activitySOresult.outputs.result != 'success'
@@ -295,6 +302,7 @@ jobs:
           run: |
             PROJECT_ID=${{ steps.projectid.outputs.result }}
             ACTIVITY_ID=${{ steps.getCommitactivity.outputs.id }}
+
             ACTIVITY_STATE="in_progress"
             until [ $ACTIVITY_STATE == "complete" ];do
               sleep 10
@@ -302,6 +310,7 @@ jobs:
               echo "Activity state: $ACTIVITY_STATE"
             done
             ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+            
             echo "::set-output name=result::$ACTIVITY_RESULT"
         - name: Break on activity failure
           if: steps.activityCommitresult.outputs.result != 'success'
@@ -312,6 +321,7 @@ jobs:
           run: |
             PROJECT_ID=${{ steps.projectid.outputs.result }}
             URL=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
+
             STATUS=$(URL=$URL python -m poetry run python get_status.py)
             if [ $STATUS -ne 200 ]; then
               echo "Failed."
