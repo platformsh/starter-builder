@@ -209,18 +209,9 @@ jobs:
         - name: Check activity status
           id: activityresult
           run: |
-            # PROJECT_ID=${{ steps.projectid.outputs.result }}
-            # ACTIVITY_ID=${{ steps.getactivity.outputs.id }}
-
-            # ACTIVITY_STATE="in_progress"
-            # until [ $ACTIVITY_STATE == "complete" ];do
-            #   sleep 10
-            #   ACTIVITY_STATE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.state')
-            #   echo "Activity state: $ACTIVITY_STATE"
-            # done
-
-            ./wait_for_activity_complete.sh
-
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
+            ACTIVITY_ID=${{ steps.getactivity.outputs.id }}
+            ./wait_for_activity_complete.sh $PROJECT_ID $UPDATE_ENVIRONMENT $ACTIVITY_ID
             ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
             echo "::set-output name=result::$ACTIVITY_RESULT"
         - name: Break on activity failure
