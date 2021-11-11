@@ -169,14 +169,25 @@ jobs:
         - name: Install Platform.sh CLI
           run: |
             curl -sS https://platform.sh/cli/installer | php
+        - name: Get the Project ID
+          id: projectid
+          run: |
+            PROJECT_ID=$(~/.platformsh/bin/platform project:list --title="${{ matrix.template }}" --no-header --columns=ID --format=plain)
+            ID_LENGTH=$(echo ${#PROJECT_ID})
+            if [ $ID_LENGHT > 13 ];then
+              echo "Failed. More than on project retrieved for Title: ${{ matrix.template}}"
+              echo "  * IDs: $PROJECT_ID"
+              exit 1
+            fi
+            echo "::set-output name=result::$PROJECT_ID"
         # get the project ID for the template repo. (outputs: project_id)
         # ! TODO: IMPROVE GETTING PROJECT_ID - consequence of P.sh + GH integration = service hook, not webhook. See projects.yaml for details.
-        - uses: actions/checkout@v2
-        - name: Get Project ID w yq
-          id: projectid
-          uses: mikefarah/yq@master
-          with:
-            cmd: yq eval '.projects.${{ matrix.template }}' 'projects.yaml'
+        # - uses: actions/checkout@v2
+        # - name: Get Project ID w yq
+        #   id: projectid
+        #   uses: mikefarah/yq@master
+        #   with:
+        #     cmd: yq eval '.projects.${{ matrix.template }}' 'projects.yaml'
         # activate the update environment. (outputs: none)
         - name: Activate so-update environment
           run: |
