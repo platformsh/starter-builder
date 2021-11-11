@@ -174,10 +174,12 @@ jobs:
           run: |
             PROJECT_ID=$(~/.platformsh/bin/platform project:list --title="${{ matrix.template }}" --no-header --columns=ID --format=plain)
             ID_LENGTH=$(echo ${#PROJECT_ID})
-            if [ $ID_LENGHT > 13 ];then
-              echo "Failed. More than on project retrieved for Title: ${{ matrix.template}}"
+            if [ $ID_LENGTH > 13 ];then
+              echo "Failed. More than one project retrieved for Title: ${{ matrix.template}}"
               echo "  * IDs: $PROJECT_ID"
               exit 1
+            else
+              echo "Success! Project $PROJECT_ID found for template (${{ matrix.template }})."
             fi
             echo "::set-output name=result::$PROJECT_ID"
         # get the project ID for the template repo. (outputs: project_id)
