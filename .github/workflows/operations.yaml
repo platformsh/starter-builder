@@ -9,11 +9,15 @@ on:
 #     - cron:  "42 7 15 * *" #build project on the 15th day of every month on the 42nd minute of the 7th hour.
 
 env:
+    # Job vars.
     UPDATE_ENVIRONMENT: so-updates
     OPERATION_NAME: update
+    # Dependencies.
+    POETRY_VERSION: '1.1.11'
+    # Auth.
     GITHUB_TOKEN: ${{ secrets.DEVREL_TOKEN }}
     PLATFORMSH_CLI_TOKEN: ${{ secrets.PSH_CLI_TOKEN }}
-    # Notification vars.
+    # Notifications.
     SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
     SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
     JOB_ID: 'source operations'
@@ -26,6 +30,7 @@ jobs:
         name: 'Get templates'
         outputs:
             templates: ${{ steps.getlist.outputs.templates }}
+            threadts: ${{ steps.startslack.outputs.threadts }}
         steps: 
           - uses: actions/checkout@v2
           - name: Setup Python
@@ -46,7 +51,7 @@ jobs:
               echo "::set-output name=templates::$TEMPLATES"
           - name: Install Poetry
             run: |
-              python -m pip install poetry==1.1.11
+              python -m pip install poetry==$POETRY_VERSION
           - name: Configure Poetry
             run: |
               python -m poetry config virtualenvs.in-project true
@@ -65,99 +70,107 @@ jobs:
               THREAD_ID=$(SLACK_BOT_TOKEN=$SLACK_TOKEN CHANNEL_ID=$SLACK_CHANNEL_ID JOB_ID="$JOB_ID" JOB_COLOR=$JOB_COLOR poetry run python slack_notifier.py start $RUN_URL "$START_MESSAGE")
               echo "::set-output name=threadts::$THREAD_ID"
 
-    # test:
-    #     needs: build
-    #     runs-on: ubuntu-latest
-    #     name: 'SO Update test'
-    #     strategy:
-    #         fail-fast: false
-    #         matrix: 
-    #             template: ${{fromJSON(needs.build.outputs.templates)}}
-    #             exclude:
-    #               - template: 'nuxtjs'
-    #               - template: 'pimcore'
-    #               - template: 'django3'
-    #               - template: 'microprofile-wildfly'
-    #               - template: 'symfony5'
-    #               - template: 'django2'
-    #               - template: 'gatsby-strapi'
-    #               - template: 'drupal8-opigno'
-    #               - template: 'echo'
-    #               - template: 'python3'
-    #               - template: 'nextjs'
-    #               - template: 'express'
-    #               - template: 'drupal8'
-    #               - template: 'spring-kotlin'
-    #               - template: 'eleventy-strapi'
-    #               - template: 'koa'
-    #               - template: 'microprofile-openliberty'
-    #               - template: 'gatsby-wordpress'
-    #               - template: 'pyramid'
-    #               - template: 'mattermost'
-    #               - template: 'backdrop'
-    #               - template: 'golang'
-    #               - template: 'wordpress-woocommerce'
-    #               - template: 'strapi'
-    #               - template: 'magento2ce'
-    #               - template: 'nextcloud'
-    #               - template: 'microprofile-helidon'
-    #               - template: 'python3-uwsgi'
-    #               - template: 'beego'
-    #               - template: 'meilisearch'
-    #               - template: 'django3'
-    #               - template: 'gatsby'
-    #               - template: 'microprofile-tomee'
-    #               - template: 'akeneo'
-    #               - template: 'symfony4'
-    #               - template: 'microprofile-kumuluzee'
-    #               - template: 'nodejs'
-    #               - template: 'wordpress-bedrock'
-    #               - template: 'tomcat'
-    #               - template: 'typo3'
-    #               - template: 'wordpress-vanilla'
-    #               - template: 'elastic-apm'
-    #               - template: 'probot'
-    #               - template: 'flask'
-    #               - template: 'drupal8-multisite'
-    #               - template: 'jetty'
-    #               - template: 'lisp'
-    #               - template: 'spring-boot-gradle-mysql'
-    #               - template: 'drupal8-govcms8'
-    #               - template: 'wagtail'
-    #               - template: 'php'
-    #               - template: 'jenkins'
-    #               - template: 'microprofile-thorntail'
-    #               - template: 'laravel'
-    #               - template: 'quarkus'
-    #               - template: 'xwiki'
-    #               - template: 'spring-boot-maven-mysql'
-    #               - template: 'spring-mvc-maven-mongodb'
-    #               - template: 'micronaut'
-    #               - template: 'pelican'
-    #               - template: 'wordpress-composer'
-    #               - template: 'rails'
-    #               - template: 'aspnet-core'
-    #               - template: 'gin'
-    #               - template: 'drupal9'
-    #               - template: 'gatsby-drupal'
-    #               - template: 'microprofile-payara'
-    #               - template: 'sculpin'
-    #               - template: 'hugo'
-    #     steps: 
+    test:
+        needs: build
+        runs-on: ubuntu-latest
+        name: 'SO Update test'
+        strategy:
+            fail-fast: false
+            matrix: 
+                template: ${{fromJSON(needs.build.outputs.templates)}}
+                exclude:
+                  - template: 'nuxtjs'
+                  - template: 'pimcore'
+                  - template: 'django3'
+                  - template: 'microprofile-wildfly'
+                  - template: 'symfony5'
+                  - template: 'django2'
+                  - template: 'gatsby-strapi'
+                  - template: 'drupal8-opigno'
+                  - template: 'echo'
+                  - template: 'python3'
+                  - template: 'nextjs'
+                  - template: 'express'
+                  - template: 'drupal8'
+                  - template: 'spring-kotlin'
+                  - template: 'eleventy-strapi'
+                  - template: 'koa'
+                  - template: 'microprofile-openliberty'
+                  - template: 'gatsby-wordpress'
+                  - template: 'pyramid'
+                  - template: 'mattermost'
+                  - template: 'backdrop'
+                  - template: 'golang'
+                  - template: 'wordpress-woocommerce'
+                  - template: 'strapi'
+                  - template: 'magento2ce'
+                  - template: 'nextcloud'
+                  - template: 'microprofile-helidon'
+                  - template: 'python3-uwsgi'
+                  - template: 'beego'
+                  - template: 'meilisearch'
+                  - template: 'django3'
+                  - template: 'gatsby'
+                  - template: 'microprofile-tomee'
+                  - template: 'akeneo'
+                  - template: 'symfony4'
+                  - template: 'microprofile-kumuluzee'
+                  - template: 'nodejs'
+                  - template: 'wordpress-bedrock'
+                  - template: 'tomcat'
+                  - template: 'typo3'
+                  - template: 'wordpress-vanilla'
+                  - template: 'elastic-apm'
+                  - template: 'probot'
+                  - template: 'flask'
+                  - template: 'drupal8-multisite'
+                  - template: 'jetty'
+                  - template: 'lisp'
+                  - template: 'spring-boot-gradle-mysql'
+                  - template: 'drupal8-govcms8'
+                  - template: 'wagtail'
+                  - template: 'php'
+                  - template: 'jenkins'
+                  - template: 'microprofile-thorntail'
+                  - template: 'laravel'
+                  - template: 'quarkus'
+                  - template: 'xwiki'
+                  - template: 'spring-boot-maven-mysql'
+                  - template: 'spring-mvc-maven-mongodb'
+                  - template: 'micronaut'
+                  - template: 'pelican'
+                  - template: 'wordpress-composer'
+                  - template: 'rails'
+                  - template: 'aspnet-core'
+                  - template: 'gin'
+                  - template: 'drupal9'
+                  - template: 'gatsby-drupal'
+                  - template: 'microprofile-payara'
+                  - template: 'sculpin'
+                  - template: 'hugo'
+        steps: 
 
-    #     # 0. CLEANING UP
-    #     # check if the branch already exists. (outputs: GH branch message)
-    #     - name: Check if SO branch exists on GH
-    #       id: branchstatus
-    #       run: |
-    #         STATUS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$UPDATE_ENVIRONMENT)
-    #         echo "::set-output name=status::$( echo $STATUS | jq -r '.message' )"
-    #     # delete update branch if exists. (outputs: none)
-    #     - name: Delete pre-existing update branch
-    #       if: steps.branchstatus.outputs.status != 'Branch not found'
-    #       run: |
-    #         curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs/heads/$UPDATE_ENVIRONMENT
-    #         sleep 60
+        # 0. CLEANING UP
+        # check if the branch already exists. (outputs: GH branch message)
+        - name: Check if SO branch exists on GH
+          id: branchstatus
+          run: |
+            STATUS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$UPDATE_ENVIRONMENT)
+            echo "::set-output name=status::$( echo $STATUS | jq -r '.message' )"
+        # Skip the template if the update environment already exists.
+        - name: Delete pre-existing update branch
+          if: steps.branchstatus.outputs.status != 'Branch not found'
+          run: |
+            TEMPLATE=${{ matrix.template }} 
+            $MESSAGE="Source operation update branch already exists. Skipping template until open branch (https://github.com/platformsh-templates/$TEMPLATE/tree/$UPDATE_ENVIRONMENT) is closed."
+            echo "$MESSAGE"
+            RUN_URL=https://github.com/platformsh/starter-builder/actions/runs/$GITHUB_RUN_ID
+            PR_URL='no pr'
+            THREAD_ID=${{ needs.build.outputs.threadts }}
+            RESULT=$(SLACK_BOT_TOKEN=$SLACK_BOT_TOKEN CHANNEL_ID=$CHANNEL_ID THREAD_ID=$THREAD_ID poetry run python slack_notifier.py skip $TEMPLATE "$RUN_URL" "$PR_URL" "$MESSAGE")
+
+            # curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs/heads/$UPDATE_ENVIRONMENT
+            # sleep 60
 
     #     # 1. CREATING THE SO-UPDATE BRANCH
     #     # identify the default branch for the template repo. (outputs: GH repo default branch name)
