@@ -149,9 +149,7 @@ jobs:
                   - template: 'sculpin'
                   - template: 'hugo'
         steps: 
-
-        # jobs.<job_id>.steps[*].timeout-minutes for extended activities and curls
-        
+                  
         # 1. SETTING UP 
         - uses: actions/checkout@v2
         - name: Install Poetry
@@ -272,12 +270,13 @@ jobs:
             echo "::set-output name=result::$ACTIVITY_RESULT"
         - name: Break on activity failure
           if: steps.activityresult.outputs.result != 'success'
+          if: ${{ steps.branchstatus.outputs.status == 'Branch not found' && steps.activityresult.outputs.result != 'success' }}
           run: |
             TEMPLATE=${{ matrix.template }} 
             RUN_URL=https://github.com/platformsh/starter-builder/actions/runs/$GITHUB_RUN_ID
             PR_URL='no pr'
             MESSAGE='Some long failure message that you should go investigate'
-            RESULT=$(SLACK_BOT_TOKEN=$SLACK_BOT_TOKEN CHANNEL_ID=$CHANNEL_ID THREAD_ID=$THREAD_ID poetry run python token_notifier.py down $TEMPLATE "$RUN_URL" "$PR_URL" "$MESSAGE")
+            RESULT=$(SLACK_BOT_TOKEN=$SLACK_BOT_TOKEN CHANNEL_ID=$CHANNEL_ID THREAD_ID=$THREAD_ID poetry run python slack_notifier.py down $TEMPLATE "$RUN_URL" "$PR_URL" "$MESSAGE")
             exit 1
 
     #     # 4. CHECK THE ACTIVATED ENVIRONMENT
@@ -382,3 +381,31 @@ jobs:
     #           echo "Passed."
     #         fi
 
+  finish:
+    runs-on: ubuntu-latest
+    name: 'Finish tests'
+    steps: 
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install Poetry
+        run: |
+          python -m pip install poetry==$POETRY_VERSION
+      - name: Configure Poetry
+        run: |
+          python -m poetry config virtualenvs.in-project true
+      - name: Cache the virtualenv
+        uses: actions/cache@v2
+        with:
+          path: ./.venv
+          key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        run: |
+          python -m poetry install
+      - name: 'Notify slack when finished'
+        run: |
+          THREAD_ID=${{ needs.build.outputs.threadts }}
+          RUN_URL=https://github.com/platformsh/starter-builder/actions/runs/$GITHUB_RUN_ID
+          RESULT=$(SLACK_BOT_TOKEN=$SLACK_TOKEN CHANNEL_ID=$SLACK_CHANNEL_ID JOB_ID="$JOB_ID" THREAD_ID=$THREAD_ID JOB_COLOR=$JOB_COLOR poetry run python slack_notifier.py finish $RUN_URL "$START_MESSAGE")

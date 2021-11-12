@@ -194,7 +194,7 @@ def alert_finish(alert, messageID):
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": "cc: <@chad> <@Paul Gilzow>"
+                            "text": "cc: <@chad>"
                         }
                     },
                     {
