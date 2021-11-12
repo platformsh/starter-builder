@@ -149,8 +149,24 @@ jobs:
                   - template: 'sculpin'
                   - template: 'hugo'
         steps: 
+        
+        # 1. SETTING UP 
+        - name: Install Poetry
+          run: |
+            python -m pip install poetry==$POETRY_VERSION
+        - name: Configure Poetry
+          run: |
+            python -m poetry config virtualenvs.in-project true
+        - name: Cache the virtualenv
+          uses: actions/cache@v2
+          with:
+            path: ./.venv
+            key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
+        - name: Install dependencies
+          run: |
+            python -m poetry install
 
-        # 0. CLEANING UP
+        # 2. CHECKING FOR PREVIOUS UPDATES IN PROGRESS/INVESTIGATION
         # check if the branch already exists. (outputs: GH branch message)
         - name: Check if SO branch exists on GH
           id: branchstatus
