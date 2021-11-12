@@ -1,0 +1,7 @@
+# The Platform.sh integration uses the now deprecated "Service hooks", rather than webhooks. 
+# The environment URL, and therefore the projectID, is not available on branches - only pull
+# requests with the default integration settings. Until our integration is updated to provide
+# P.sh environment information at least on the default branch, hardcoded projectIDs is necessary
+# to test source operations. This file is not used where projectID is otherwise retrievable.
+projects:
+    directus: o3fc5w4n5iumy
