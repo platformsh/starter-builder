@@ -280,6 +280,7 @@ jobs:
     finish:
       runs-on: ubuntu-latest
       name: 'Finish tests'
+      needs: [build, test]
       steps: 
         - uses: actions/checkout@v2
         - name: Setup Python
