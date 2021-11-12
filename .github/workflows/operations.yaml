@@ -269,7 +269,6 @@ jobs:
             ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
             echo "::set-output name=result::$ACTIVITY_RESULT"
         - name: Break on activity failure
-          if: steps.activityresult.outputs.result != 'success'
           if: ${{ steps.branchstatus.outputs.status == 'Branch not found' && steps.activityresult.outputs.result != 'success' }}
           run: |
             TEMPLATE=${{ matrix.template }} 
