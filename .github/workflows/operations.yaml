@@ -38,286 +38,282 @@ jobs:
               print(json.dumps(dirs))
               ')
               echo "::set-output name=templates::$TEMPLATES"
-    test:
-        needs: build
-        runs-on: ubuntu-latest
-        name: 'SO Update test'
-        strategy:
-            fail-fast: false
-            matrix: 
-                template: ${{fromJSON(needs.build.outputs.templates)}}
-                exclude:
-                  - template: 'nuxtjs'
-                  - template: 'pimcore'
-                  - template: 'django3'
-                  - template: 'microprofile-wildfly'
-                  - template: 'symfony5'
-                  - template: 'django2'
-                  - template: 'gatsby-strapi'
-                  - template: 'drupal8-opigno'
-                  - template: 'echo'
-                  - template: 'python3'
-                  - template: 'nextjs'
-                  - template: 'express'
-                  - template: 'drupal8'
-                  - template: 'spring-kotlin'
-                  - template: 'eleventy-strapi'
-                  - template: 'koa'
-                  - template: 'microprofile-openliberty'
-                  - template: 'gatsby-wordpress'
-                  - template: 'pyramid'
-                  - template: 'mattermost'
-                  - template: 'backdrop'
-                  - template: 'golang'
-                  - template: 'wordpress-woocommerce'
-                  - template: 'strapi'
-                  - template: 'magento2ce'
-                  - template: 'nextcloud'
-                  - template: 'microprofile-helidon'
-                  - template: 'python3-uwsgi'
-                  - template: 'beego'
-                  - template: 'meilisearch'
-                  - template: 'django3'
-                  - template: 'gatsby'
-                  - template: 'microprofile-tomee'
-                  - template: 'akeneo'
-                  - template: 'symfony4'
-                  - template: 'microprofile-kumuluzee'
-                  - template: 'nodejs'
-                  - template: 'wordpress-bedrock'
-                  - template: 'tomcat'
-                  - template: 'typo3'
-                  - template: 'wordpress-vanilla'
-                  - template: 'elastic-apm'
-                  - template: 'probot'
-                  - template: 'flask'
-                  - template: 'drupal8-multisite'
-                  - template: 'jetty'
-                  - template: 'lisp'
-                  - template: 'spring-boot-gradle-mysql'
-                  - template: 'drupal8-govcms8'
-                  - template: 'wagtail'
-                  - template: 'php'
-                  - template: 'jenkins'
-                  - template: 'microprofile-thorntail'
-                  - template: 'laravel'
-                  - template: 'quarkus'
-                  - template: 'xwiki'
-                  - template: 'spring-boot-maven-mysql'
-                  - template: 'spring-mvc-maven-mongodb'
-                  - template: 'micronaut'
-                  - template: 'pelican'
-                  - template: 'wordpress-composer'
-                  - template: 'rails'
-                  - template: 'aspnet-core'
-                  - template: 'gin'
-                  - template: 'drupal9'
-                  - template: 'gatsby-drupal'
-                  - template: 'microprofile-payara'
-                  - template: 'sculpin'
-                  - template: 'hugo'
-        steps: 
+          - name: 'Start notification on Slack'
+            id: startslack
+            run: |
+              printenv
+    # test:
+    #     needs: build
+    #     runs-on: ubuntu-latest
+    #     name: 'SO Update test'
+    #     strategy:
+    #         fail-fast: false
+    #         matrix: 
+    #             template: ${{fromJSON(needs.build.outputs.templates)}}
+    #             exclude:
+    #               - template: 'nuxtjs'
+    #               - template: 'pimcore'
+    #               - template: 'django3'
+    #               - template: 'microprofile-wildfly'
+    #               - template: 'symfony5'
+    #               - template: 'django2'
+    #               - template: 'gatsby-strapi'
+    #               - template: 'drupal8-opigno'
+    #               - template: 'echo'
+    #               - template: 'python3'
+    #               - template: 'nextjs'
+    #               - template: 'express'
+    #               - template: 'drupal8'
+    #               - template: 'spring-kotlin'
+    #               - template: 'eleventy-strapi'
+    #               - template: 'koa'
+    #               - template: 'microprofile-openliberty'
+    #               - template: 'gatsby-wordpress'
+    #               - template: 'pyramid'
+    #               - template: 'mattermost'
+    #               - template: 'backdrop'
+    #               - template: 'golang'
+    #               - template: 'wordpress-woocommerce'
+    #               - template: 'strapi'
+    #               - template: 'magento2ce'
+    #               - template: 'nextcloud'
+    #               - template: 'microprofile-helidon'
+    #               - template: 'python3-uwsgi'
+    #               - template: 'beego'
+    #               - template: 'meilisearch'
+    #               - template: 'django3'
+    #               - template: 'gatsby'
+    #               - template: 'microprofile-tomee'
+    #               - template: 'akeneo'
+    #               - template: 'symfony4'
+    #               - template: 'microprofile-kumuluzee'
+    #               - template: 'nodejs'
+    #               - template: 'wordpress-bedrock'
+    #               - template: 'tomcat'
+    #               - template: 'typo3'
+    #               - template: 'wordpress-vanilla'
+    #               - template: 'elastic-apm'
+    #               - template: 'probot'
+    #               - template: 'flask'
+    #               - template: 'drupal8-multisite'
+    #               - template: 'jetty'
+    #               - template: 'lisp'
+    #               - template: 'spring-boot-gradle-mysql'
+    #               - template: 'drupal8-govcms8'
+    #               - template: 'wagtail'
+    #               - template: 'php'
+    #               - template: 'jenkins'
+    #               - template: 'microprofile-thorntail'
+    #               - template: 'laravel'
+    #               - template: 'quarkus'
+    #               - template: 'xwiki'
+    #               - template: 'spring-boot-maven-mysql'
+    #               - template: 'spring-mvc-maven-mongodb'
+    #               - template: 'micronaut'
+    #               - template: 'pelican'
+    #               - template: 'wordpress-composer'
+    #               - template: 'rails'
+    #               - template: 'aspnet-core'
+    #               - template: 'gin'
+    #               - template: 'drupal9'
+    #               - template: 'gatsby-drupal'
+    #               - template: 'microprofile-payara'
+    #               - template: 'sculpin'
+    #               - template: 'hugo'
+    #     steps: 
 
-        # 0. CLEANING UP
-        # check if the branch already exists. (outputs: GH branch message)
-        - name: Check if SO branch exists on GH
-          id: branchstatus
-          run: |
-            STATUS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$UPDATE_ENVIRONMENT)
-            echo "::set-output name=status::$( echo $STATUS | jq -r '.message' )"
-        # delete update branch if exists. (outputs: none)
-        - name: Delete pre-existing update branch
-          if: steps.branchstatus.outputs.status != 'Branch not found'
-          run: |
-            curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs/heads/$UPDATE_ENVIRONMENT
-            sleep 60
+    #     # 0. CLEANING UP
+    #     # check if the branch already exists. (outputs: GH branch message)
+    #     - name: Check if SO branch exists on GH
+    #       id: branchstatus
+    #       run: |
+    #         STATUS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$UPDATE_ENVIRONMENT)
+    #         echo "::set-output name=status::$( echo $STATUS | jq -r '.message' )"
+    #     # delete update branch if exists. (outputs: none)
+    #     - name: Delete pre-existing update branch
+    #       if: steps.branchstatus.outputs.status != 'Branch not found'
+    #       run: |
+    #         curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs/heads/$UPDATE_ENVIRONMENT
+    #         sleep 60
 
-        # 1. CREATING THE SO-UPDATE BRANCH
-        # identify the default branch for the template repo. (outputs: GH repo default branch name)
-        - name: Get template default branch
-          id: defaultbranch
-          run: |
-            # Get the default branch.
-            DEFAULT_BRANCH=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }} | jq -r '.default_branch')
-            echo "::set-output name=branch::$DEFAULT_BRANCH" 
-        # identify commit SHA on the default branch. (outputs: GH repo default branch SHA)
-        - name: Get default branch SHA
-          id: defaultsha
-          run: |
-            DEFAULT_BRANCH=${{ steps.defaultbranch.outputs.branch }}
-            # Get the default branch SHA.
-            SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$DEFAULT_BRANCH)
-            echo "::set-output name=sha::$( echo $SHA | jq -r '.commit.sha' )" 
-        # create the update branch on GH. (outputs: none)
-        - name: Create update branch
-          # only runs if branch does not already exist.
-          run: |
-            DEFAULT_BRANCH_SHA=${{ steps.defaultsha.outputs.sha }}
-            UPDATE_BRANCH_REF=refs/heads/$UPDATE_ENVIRONMENT
-            echo "Creating $UPDATE_BRANCH_REF from $DEFAULT_BRANCH_SHA"
-            DATA=$( jq -n \
-                        --arg ref "$UPDATE_BRANCH_REF" \
-                        --arg sha "$DEFAULT_BRANCH_SHA" \
-                        '{ref: $ref, sha: $sha}' )
-            curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" \
-                -d "$DATA" \
-                https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs
-            sleep 5
+    #     # 1. CREATING THE SO-UPDATE BRANCH
+    #     # identify the default branch for the template repo. (outputs: GH repo default branch name)
+    #     - name: Get template default branch
+    #       id: defaultbranch
+    #       run: |
+    #         # Get the default branch.
+    #         DEFAULT_BRANCH=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }} | jq -r '.default_branch')
+    #         echo "::set-output name=branch::$DEFAULT_BRANCH" 
+    #     # identify commit SHA on the default branch. (outputs: GH repo default branch SHA)
+    #     - name: Get default branch SHA
+    #       id: defaultsha
+    #       run: |
+    #         DEFAULT_BRANCH=${{ steps.defaultbranch.outputs.branch }}
+    #         # Get the default branch SHA.
+    #         SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$DEFAULT_BRANCH)
+    #         echo "::set-output name=sha::$( echo $SHA | jq -r '.commit.sha' )" 
+    #     # create the update branch on GH. (outputs: none)
+    #     - name: Create update branch
+    #       # only runs if branch does not already exist.
+    #       run: |
+    #         DEFAULT_BRANCH_SHA=${{ steps.defaultsha.outputs.sha }}
+    #         UPDATE_BRANCH_REF=refs/heads/$UPDATE_ENVIRONMENT
+    #         echo "Creating $UPDATE_BRANCH_REF from $DEFAULT_BRANCH_SHA"
+    #         DATA=$( jq -n \
+    #                     --arg ref "$UPDATE_BRANCH_REF" \
+    #                     --arg sha "$DEFAULT_BRANCH_SHA" \
+    #                     '{ref: $ref, sha: $sha}' )
+    #         curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" \
+    #             -d "$DATA" \
+    #             https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs
+    #         sleep 5
 
-        # 2. ACTIVATING THE SO UPDATE ENVIRONMENT
-        # install Platform.sh CLI. (outputs: none)
-        - uses: actions/checkout@v2
-        - name: Install Platform.sh CLI
-          run: |
-            curl -sS https://platform.sh/cli/installer | php
-        - name: Get the Project ID
-          id: projectid
-          run: |
-            PROJECT_ID=$(~/.platformsh/bin/platform project:list --title="${{ matrix.template }}" --no-header --columns=ID --format=plain)
-            ID_LENGTH=$(echo ${#PROJECT_ID})
-            # A single project id has length 13.
-            if [ $ID_LENGTH -gt 14 ];then
-              echo "Failed. More than one project retrieved for Title: ${{ matrix.template}}"
-              echo "  * IDs: $PROJECT_ID"
-              exit 1
-            else
-              echo "Success! Project $PROJECT_ID found for template (${{ matrix.template }})."
-            fi
-            echo "::set-output name=result::$PROJECT_ID"
-        # get the project ID for the template repo. (outputs: project_id)
-        # ! TODO: IMPROVE GETTING PROJECT_ID - consequence of P.sh + GH integration = service hook, not webhook. See projects.yaml for details.
-        # - uses: actions/checkout@v2
-        # - name: Get Project ID w yq
-        #   id: projectid
-        #   uses: mikefarah/yq@master
-        #   with:
-        #     cmd: yq eval '.projects.${{ matrix.template }}' 'projects.yaml'
-        # activate the update environment. (outputs: none)
-        - name: Activate so-update environment
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            ~/.platformsh/bin/platform environment:activate $UPDATE_ENVIRONMENT -p $PROJECT_ID -y --no-wait
+    #     # 2. ACTIVATING THE SO UPDATE ENVIRONMENT
+    #     # install Platform.sh CLI. (outputs: none)
+    #     - uses: actions/checkout@v2
+    #     - name: Install Platform.sh CLI
+    #       run: |
+    #         curl -sS https://platform.sh/cli/installer | php
+    #     - name: Get the Project ID
+    #       id: projectid
+    #       run: |
+    #         PROJECT_ID=$(~/.platformsh/bin/platform project:list --title="${{ matrix.template }}" --no-header --columns=ID --format=plain)
+    #         ID_LENGTH=$(echo ${#PROJECT_ID})
+    #         # A single project id has length 13.
+    #         if [ $ID_LENGTH -gt 14 ];then
+    #           echo "Failed. More than one project retrieved for Title: ${{ matrix.template}}"
+    #           echo "  * IDs: $PROJECT_ID"
+    #           exit 1
+    #         else
+    #           echo "Success! Project $PROJECT_ID found for template (${{ matrix.template }})."
+    #         fi
+    #         echo "::set-output name=result::$PROJECT_ID"
+    #     # get the project ID for the template repo. (outputs: project_id)
+    #     - name: Activate so-update environment
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ~/.platformsh/bin/platform environment:activate $UPDATE_ENVIRONMENT -p $PROJECT_ID -y --no-wait
 
-        # 3. RETRIEVE ENVIRONMENT ACTIVATION
-        # Get the most recent activity. (outputs: activity ID)
-        - name: Get activity ID
-          id: getactivity
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
-            echo "::set-output name=id::$ACTIVITY_ID"
-        - name: Check activity status
-          id: activityresult
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            ACTIVITY_ID=${{ steps.getactivity.outputs.id }}
-            ./wait_for_activity_complete.sh $PROJECT_ID $UPDATE_ENVIRONMENT $ACTIVITY_ID
-            ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
-            echo "::set-output name=result::$ACTIVITY_RESULT"
-        - name: Break on activity failure
-          if: steps.activityresult.outputs.result != 'success'
-          run: |
-            exit 1
+    #     # 3. RETRIEVE ENVIRONMENT ACTIVATION
+    #     # Get the most recent activity. (outputs: activity ID)
+    #     - name: Get activity ID
+    #       id: getactivity
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
+    #         echo "::set-output name=id::$ACTIVITY_ID"
+    #     - name: Check activity status
+    #       id: activityresult
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ACTIVITY_ID=${{ steps.getactivity.outputs.id }}
+    #         ./wait_for_activity_complete.sh $PROJECT_ID $UPDATE_ENVIRONMENT $ACTIVITY_ID
+    #         ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+    #         echo "::set-output name=result::$ACTIVITY_RESULT"
+    #     - name: Break on activity failure
+    #       if: steps.activityresult.outputs.result != 'success'
+    #       run: |
+    #         exit 1
 
-        # 4. CHECK THE ACTIVATED ENVIRONMENT
-        - name: Install Poetry
-          run: |
-            python -m pip install poetry==1.1.11
-        - name: Configure Poetry
-          run: |
-            python -m poetry config virtualenvs.in-project true
-        - name: Cache the virtualenv
-          uses: actions/cache@v2
-          with:
-            path: ./.venv
-            key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
-        - name: Install dependencies
-          run: |
-            python -m poetry install
-        - name: Verify environment
-          if: steps.activityresult.outputs.result == 'success'
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            URL=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
+    #     # 4. CHECK THE ACTIVATED ENVIRONMENT
+    #     - name: Install Poetry
+    #       run: |
+    #         python -m pip install poetry==1.1.11
+    #     - name: Configure Poetry
+    #       run: |
+    #         python -m poetry config virtualenvs.in-project true
+    #     - name: Cache the virtualenv
+    #       uses: actions/cache@v2
+    #       with:
+    #         path: ./.venv
+    #         key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
+    #     - name: Install dependencies
+    #       run: |
+    #         python -m poetry install
+    #     - name: Verify environment
+    #       if: steps.activityresult.outputs.result == 'success'
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         URL=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
 
-            STATUS=$(URL=$URL python -m poetry run python get_status.py)
-            if [ $STATUS -ne 200 ]; then
-              echo "Failed."
-              exit 1
-            else
-              echo "Passed."
-            fi
+    #         STATUS=$(URL=$URL python -m poetry run python get_status.py)
+    #         if [ $STATUS -ne 200 ]; then
+    #           echo "Failed."
+    #           exit 1
+    #         else
+    #           echo "Passed."
+    #         fi
 
-        # 5. RUN THE OPERATION
-        - name: Run source operation
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            ~/.platformsh/bin/platform source-operation:run $OPERATION_NAME -p $PROJECT_ID -e $UPDATE_ENVIRONMENT --no-wait
+    #     # 5. RUN THE OPERATION
+    #     - name: Run source operation
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ~/.platformsh/bin/platform source-operation:run $OPERATION_NAME -p $PROJECT_ID -e $UPDATE_ENVIRONMENT --no-wait
 
-        # 6. FOLLOW UP ON THE SOURCE OPERATION
-        - name: Get activity ID
-          id: getSOactivity
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
-            echo "::set-output name=id::$ACTIVITY_ID"
-        - name: Check activity status
-          id: activitySOresult
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            ACTIVITY_ID=${{ steps.getSOactivity.outputs.id }}
+    #     # 6. FOLLOW UP ON THE SOURCE OPERATION
+    #     - name: Get activity ID
+    #       id: getSOactivity
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
+    #         echo "::set-output name=id::$ACTIVITY_ID"
+    #     - name: Check activity status
+    #       id: activitySOresult
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ACTIVITY_ID=${{ steps.getSOactivity.outputs.id }}
 
-            ACTIVITY_STATE="in_progress"
-            until [ $ACTIVITY_STATE == "complete" ];do
-              sleep 10
-              ACTIVITY_STATE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.state')
-              echo "Activity state: $ACTIVITY_STATE"
-            done
-            ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+    #         ACTIVITY_STATE="in_progress"
+    #         until [ $ACTIVITY_STATE == "complete" ];do
+    #           sleep 10
+    #           ACTIVITY_STATE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.state')
+    #           echo "Activity state: $ACTIVITY_STATE"
+    #         done
+    #         ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
             
-            echo "::set-output name=result::$ACTIVITY_RESULT"
-        - name: Break on activity failure
-          if: steps.activitySOresult.outputs.result != 'success'
-          run: |
-            exit 1
+    #         echo "::set-output name=result::$ACTIVITY_RESULT"
+    #     - name: Break on activity failure
+    #       if: steps.activitySOresult.outputs.result != 'success'
+    #       run: |
+    #         exit 1
 
-        # 7. FOLLOW UP ON THE SO COMMIT
-        - name: Get Commit activity ID
-          id: getCommitactivity
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
-            echo "::set-output name=id::$ACTIVITY_ID"
-        - name: Check activity status
-          id: activityCommitresult
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            ACTIVITY_ID=${{ steps.getCommitactivity.outputs.id }}
+    #     # 7. FOLLOW UP ON THE SO COMMIT
+    #     - name: Get Commit activity ID
+    #       id: getCommitactivity
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
+    #         echo "::set-output name=id::$ACTIVITY_ID"
+    #     - name: Check activity status
+    #       id: activityCommitresult
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ACTIVITY_ID=${{ steps.getCommitactivity.outputs.id }}
 
-            ACTIVITY_STATE="in_progress"
-            until [ $ACTIVITY_STATE == "complete" ];do
-              sleep 10
-              ACTIVITY_STATE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.state')
-              echo "Activity state: $ACTIVITY_STATE"
-            done
-            ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+    #         ACTIVITY_STATE="in_progress"
+    #         until [ $ACTIVITY_STATE == "complete" ];do
+    #           sleep 10
+    #           ACTIVITY_STATE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.state')
+    #           echo "Activity state: $ACTIVITY_STATE"
+    #         done
+    #         ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
             
-            echo "::set-output name=result::$ACTIVITY_RESULT"
-        - name: Break on activity failure
-          if: steps.activityCommitresult.outputs.result != 'success'
-          run: |
-            exit 1
-        - name: Verify environment
-          if: steps.activityCommitresult.outputs.result == 'success'
-          run: |
-            PROJECT_ID=${{ steps.projectid.outputs.result }}
-            URL=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
+    #         echo "::set-output name=result::$ACTIVITY_RESULT"
+    #     - name: Break on activity failure
+    #       if: steps.activityCommitresult.outputs.result != 'success'
+    #       run: |
+    #         exit 1
+    #     - name: Verify environment
+    #       if: steps.activityCommitresult.outputs.result == 'success'
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         URL=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
 
-            STATUS=$(URL=$URL python -m poetry run python get_status.py)
-            if [ $STATUS -ne 200 ]; then
-              echo "Failed."
-              exit 1
-            else
-              echo "Passed."
-            fi
+    #         STATUS=$(URL=$URL python -m poetry run python get_status.py)
+    #         if [ $STATUS -ne 200 ]; then
+    #           echo "Failed."
+    #           exit 1
+    #         else
+    #           echo "Passed."
+    #         fi
 

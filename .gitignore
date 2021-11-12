@@ -5,3 +5,6 @@
 .idea/*
 .doit.db.db
 test.sh
+messages.sh
+token_notifier.py
+token_test.sh
