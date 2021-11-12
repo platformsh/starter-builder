@@ -177,98 +177,108 @@ jobs:
             STATUS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$UPDATE_ENVIRONMENT)
             echo "::set-output name=status::$( echo $STATUS | jq -r '.message' )"
         # Skip the template if the update environment already exists.
-        - name: Delete pre-existing update branch
+        - name: Exit if SO branch exists
           if: steps.branchstatus.outputs.status != 'Branch not found'
           run: |
             TEMPLATE=${{ matrix.template }} 
-            MESSAGE="Source operation update branch already exists. Skipping template until open branch (https://github.com/platformsh-templates/$TEMPLATE/tree/$UPDATE_ENVIRONMENT) is closed."
+            MESSAGE="Source operation update branch already exists. Skipping template until investigation on open branch (https://github.com/platformsh-templates/$TEMPLATE/tree/$UPDATE_ENVIRONMENT) is closed."
             echo "$MESSAGE"
             RUN_URL=https://github.com/platformsh/starter-builder/actions/runs/$GITHUB_RUN_ID
             PR_URL='no pr'
             THREAD_ID=${{ needs.build.outputs.threadts }}
             RESULT=$(SLACK_BOT_TOKEN=$SLACK_TOKEN CHANNEL_ID=$SLACK_CHANNEL_ID THREAD_ID=$THREAD_ID poetry run python slack_notifier.py skip $TEMPLATE "$RUN_URL" "$PR_URL" "$MESSAGE")
 
-            # curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs/heads/$UPDATE_ENVIRONMENT
-            # sleep 60
+        # 1. CREATING THE SO-UPDATE BRANCH
+        # identify the default branch for the template repo. (outputs: GH repo default branch name)
+        - name: Get template default branch
+          id: defaultbranch
+          if: steps.branchstatus.outputs.status == 'Branch not found'
+          run: |
+            # Get the default branch.
+            DEFAULT_BRANCH=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }} | jq -r '.default_branch')
+            echo "::set-output name=branch::$DEFAULT_BRANCH" 
+        # identify commit SHA on the default branch. (outputs: GH repo default branch SHA)
+        - name: Get default branch SHA
+          if: steps.branchstatus.outputs.status == 'Branch not found'
+          id: defaultsha
+          run: |
+            DEFAULT_BRANCH=${{ steps.defaultbranch.outputs.branch }}
+            # Get the default branch SHA.
+            SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$DEFAULT_BRANCH)
+            echo "::set-output name=sha::$( echo $SHA | jq -r '.commit.sha' )" 
+        # create the update branch on GH. (outputs: none)
+        - name: Create update branch
+          if: steps.branchstatus.outputs.status == 'Branch not found'
+          run: |
+            DEFAULT_BRANCH_SHA=${{ steps.defaultsha.outputs.sha }}
+            UPDATE_BRANCH_REF=refs/heads/$UPDATE_ENVIRONMENT
+            echo "Creating $UPDATE_BRANCH_REF from $DEFAULT_BRANCH_SHA"
+            DATA=$( jq -n \
+                        --arg ref "$UPDATE_BRANCH_REF" \
+                        --arg sha "$DEFAULT_BRANCH_SHA" \
+                        '{ref: $ref, sha: $sha}' )
+            curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" \
+                -d "$DATA" \
+                https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs
+            sleep 5
 
-    #     # 1. CREATING THE SO-UPDATE BRANCH
-    #     # identify the default branch for the template repo. (outputs: GH repo default branch name)
-    #     - name: Get template default branch
-    #       id: defaultbranch
-    #       run: |
-    #         # Get the default branch.
-    #         DEFAULT_BRANCH=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }} | jq -r '.default_branch')
-    #         echo "::set-output name=branch::$DEFAULT_BRANCH" 
-    #     # identify commit SHA on the default branch. (outputs: GH repo default branch SHA)
-    #     - name: Get default branch SHA
-    #       id: defaultsha
-    #       run: |
-    #         DEFAULT_BRANCH=${{ steps.defaultbranch.outputs.branch }}
-    #         # Get the default branch SHA.
-    #         SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/branches/$DEFAULT_BRANCH)
-    #         echo "::set-output name=sha::$( echo $SHA | jq -r '.commit.sha' )" 
-    #     # create the update branch on GH. (outputs: none)
-    #     - name: Create update branch
-    #       # only runs if branch does not already exist.
-    #       run: |
-    #         DEFAULT_BRANCH_SHA=${{ steps.defaultsha.outputs.sha }}
-    #         UPDATE_BRANCH_REF=refs/heads/$UPDATE_ENVIRONMENT
-    #         echo "Creating $UPDATE_BRANCH_REF from $DEFAULT_BRANCH_SHA"
-    #         DATA=$( jq -n \
-    #                     --arg ref "$UPDATE_BRANCH_REF" \
-    #                     --arg sha "$DEFAULT_BRANCH_SHA" \
-    #                     '{ref: $ref, sha: $sha}' )
-    #         curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" \
-    #             -d "$DATA" \
-    #             https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/git/refs
-    #         sleep 5
+        # 2. ACTIVATING THE SO UPDATE ENVIRONMENT
+        # install Platform.sh CLI. (outputs: none)
+        - uses: actions/checkout@v2
+        - name: Install Platform.sh CLI
+          if: steps.branchstatus.outputs.status == 'Branch not found'
+          run: |
+            curl -sS https://platform.sh/cli/installer | php
+        - name: Get the Project ID
+          if: steps.branchstatus.outputs.status == 'Branch not found'
+          id: projectid
+          run: |
+            PROJECT_ID=$(~/.platformsh/bin/platform project:list --title="${{ matrix.template }}" --no-header --columns=ID --format=plain)
+            ID_LENGTH=$(echo ${#PROJECT_ID})
+            # A single project id has length 13.
+            if [ $ID_LENGTH -gt 14 ];then
+              echo "Failed. More than one project retrieved for Title: ${{ matrix.template}}"
+              echo "  * IDs: $PROJECT_ID"
+              exit 1
+            else
+              echo "Success! Project $PROJECT_ID found for template (${{ matrix.template }})."
+            fi
+            echo "::set-output name=result::$PROJECT_ID"
+        # get the project ID for the template repo. (outputs: project_id)
+        - name: Activate so-update environment
+          if: steps.branchstatus.outputs.status == 'Branch not found'
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
+            ~/.platformsh/bin/platform environment:activate $UPDATE_ENVIRONMENT -p $PROJECT_ID -y --no-wait
 
-    #     # 2. ACTIVATING THE SO UPDATE ENVIRONMENT
-    #     # install Platform.sh CLI. (outputs: none)
-    #     - uses: actions/checkout@v2
-    #     - name: Install Platform.sh CLI
-    #       run: |
-    #         curl -sS https://platform.sh/cli/installer | php
-    #     - name: Get the Project ID
-    #       id: projectid
-    #       run: |
-    #         PROJECT_ID=$(~/.platformsh/bin/platform project:list --title="${{ matrix.template }}" --no-header --columns=ID --format=plain)
-    #         ID_LENGTH=$(echo ${#PROJECT_ID})
-    #         # A single project id has length 13.
-    #         if [ $ID_LENGTH -gt 14 ];then
-    #           echo "Failed. More than one project retrieved for Title: ${{ matrix.template}}"
-    #           echo "  * IDs: $PROJECT_ID"
-    #           exit 1
-    #         else
-    #           echo "Success! Project $PROJECT_ID found for template (${{ matrix.template }})."
-    #         fi
-    #         echo "::set-output name=result::$PROJECT_ID"
-    #     # get the project ID for the template repo. (outputs: project_id)
-    #     - name: Activate so-update environment
-    #       run: |
-    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
-    #         ~/.platformsh/bin/platform environment:activate $UPDATE_ENVIRONMENT -p $PROJECT_ID -y --no-wait
-
-    #     # 3. RETRIEVE ENVIRONMENT ACTIVATION
-    #     # Get the most recent activity. (outputs: activity ID)
-    #     - name: Get activity ID
-    #       id: getactivity
-    #       run: |
-    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
-    #         ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
-    #         echo "::set-output name=id::$ACTIVITY_ID"
-    #     - name: Check activity status
-    #       id: activityresult
-    #       run: |
-    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
-    #         ACTIVITY_ID=${{ steps.getactivity.outputs.id }}
-    #         ./wait_for_activity_complete.sh $PROJECT_ID $UPDATE_ENVIRONMENT $ACTIVITY_ID
-    #         ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
-    #         echo "::set-output name=result::$ACTIVITY_RESULT"
-    #     - name: Break on activity failure
-    #       if: steps.activityresult.outputs.result != 'success'
-    #       run: |
-    #         exit 1
+        # 3. RETRIEVE ENVIRONMENT ACTIVATION
+        # Get the most recent activity. (outputs: activity ID)
+        - name: Get activity ID
+          if: steps.branchstatus.outputs.status == 'Branch not found'
+          id: getactivity
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
+            ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
+            echo "::set-output name=id::$ACTIVITY_ID"
+        - name: Check activity status
+          if: steps.branchstatus.outputs.status == 'Branch not found'
+          timeout-minutes: 5
+          id: activityresult
+          run: |
+            PROJECT_ID=${{ steps.projectid.outputs.result }}
+            ACTIVITY_ID=${{ steps.getactivity.outputs.id }}
+            ./wait_for_activity_complete.sh $PROJECT_ID $UPDATE_ENVIRONMENT $ACTIVITY_ID
+            ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+            echo "::set-output name=result::$ACTIVITY_RESULT"
+        - name: Break on activity failure
+          if: steps.activityresult.outputs.result != 'success'
+          run: |
+            TEMPLATE=${{ matrix.template }} 
+            RUN_URL=https://github.com/platformsh/starter-builder/actions/runs/$GITHUB_RUN_ID
+            PR_URL='no pr'
+            MESSAGE='Some long failure message that you should go investigate'
+            RESULT=$(SLACK_BOT_TOKEN=$SLACK_BOT_TOKEN CHANNEL_ID=$CHANNEL_ID THREAD_ID=$THREAD_ID poetry run python token_notifier.py down $TEMPLATE "$RUN_URL" "$PR_URL" "$MESSAGE")
+            exit 1
 
     #     # 4. CHECK THE ACTIVATED ENVIRONMENT
     #     - name: Install Poetry

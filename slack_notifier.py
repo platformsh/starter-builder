@@ -92,6 +92,7 @@ def alert_start(alert):
         result = client.chat_postMessage(
             channel=channel_id, 
             text='',
+            link_names=True,
             attachments = [
                 {
                     "color": os.environ.get("JOB_COLOR"),
@@ -193,7 +194,7 @@ def alert_finish(alert, messageID):
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": "cc: <@chad>"
+                            "text": "cc: <@chad> <@Paul Gilzow>"
                         }
                     },
                     {
