@@ -1,0 +1,101 @@
+    #     # 4. CHECK THE ACTIVATED ENVIRONMENT
+    #     - name: Install Poetry
+    #       run: |
+    #         python -m pip install poetry==1.1.11
+    #     - name: Configure Poetry
+    #       run: |
+    #         python -m poetry config virtualenvs.in-project true
+    #     - name: Cache the virtualenv
+    #       uses: actions/cache@v2
+    #       with:
+    #         path: ./.venv
+    #         key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
+    #     - name: Install dependencies
+    #       run: |
+    #         python -m poetry install
+    #     - name: Verify environment
+    #       if: steps.activityresult.outputs.result == 'success'
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         URL=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
+
+    #         STATUS=$(URL=$URL python -m poetry run python get_status.py)
+    #         if [ $STATUS -ne 200 ]; then
+    #           echo "Failed."
+    #           exit 1
+    #         else
+    #           echo "Passed."
+    #         fi
+
+    #     # 5. RUN THE OPERATION
+    #     - name: Run source operation
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ~/.platformsh/bin/platform source-operation:run $OPERATION_NAME -p $PROJECT_ID -e $UPDATE_ENVIRONMENT --no-wait
+
+    #     # 6. FOLLOW UP ON THE SOURCE OPERATION
+    #     - name: Get activity ID
+    #       id: getSOactivity
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
+    #         echo "::set-output name=id::$ACTIVITY_ID"
+    #     - name: Check activity status
+    #       id: activitySOresult
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ACTIVITY_ID=${{ steps.getSOactivity.outputs.id }}
+
+    #         ACTIVITY_STATE="in_progress"
+    #         until [ $ACTIVITY_STATE == "complete" ];do
+    #           sleep 10
+    #           ACTIVITY_STATE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.state')
+    #           echo "Activity state: $ACTIVITY_STATE"
+    #         done
+    #         ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+            
+    #         echo "::set-output name=result::$ACTIVITY_RESULT"
+    #     - name: Break on activity failure
+    #       if: steps.activitySOresult.outputs.result != 'success'
+    #       run: |
+    #         exit 1
+
+    #     # 7. FOLLOW UP ON THE SO COMMIT
+    #     - name: Get Commit activity ID
+    #       id: getCommitactivity
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ACTIVITY_ID=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities  | jq -r '.[0].id')
+    #         echo "::set-output name=id::$ACTIVITY_ID"
+    #     - name: Check activity status
+    #       id: activityCommitresult
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         ACTIVITY_ID=${{ steps.getCommitactivity.outputs.id }}
+
+    #         ACTIVITY_STATE="in_progress"
+    #         until [ $ACTIVITY_STATE == "complete" ];do
+    #           sleep 10
+    #           ACTIVITY_STATE=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.state')
+    #           echo "Activity state: $ACTIVITY_STATE"
+    #         done
+    #         ACTIVITY_RESULT=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT/activities/$ACTIVITY_ID | jq -r '.result')
+            
+    #         echo "::set-output name=result::$ACTIVITY_RESULT"
+    #     - name: Break on activity failure
+    #       if: steps.activityCommitresult.outputs.result != 'success'
+    #       run: |
+    #         exit 1
+    #     - name: Verify environment
+    #       if: steps.activityCommitresult.outputs.result == 'success'
+    #       run: |
+    #         PROJECT_ID=${{ steps.projectid.outputs.result }}
+    #         URL=$(~/.platformsh/bin/platform project:curl -p $PROJECT_ID environments/$UPDATE_ENVIRONMENT | jq -r '._links."public-url".href')
+
+    #         STATUS=$(URL=$URL python -m poetry run python get_status.py)
+    #         if [ $STATUS -ne 200 ]; then
+    #           echo "Failed."
+    #           exit 1
+    #         else
+    #           echo "Passed."
+    #         fi
