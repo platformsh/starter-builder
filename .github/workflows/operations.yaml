@@ -162,7 +162,7 @@ jobs:
           if: steps.branchstatus.outputs.status != 'Branch not found'
           run: |
             TEMPLATE=${{ matrix.template }} 
-            $MESSAGE="Source operation update branch already exists. Skipping template until open branch (https://github.com/platformsh-templates/$TEMPLATE/tree/$UPDATE_ENVIRONMENT) is closed."
+            MESSAGE="Source operation update branch already exists. Skipping template until open branch (https://github.com/platformsh-templates/$TEMPLATE/tree/$UPDATE_ENVIRONMENT) is closed."
             echo "$MESSAGE"
             RUN_URL=https://github.com/platformsh/starter-builder/actions/runs/$GITHUB_RUN_ID
             PR_URL='no pr'
