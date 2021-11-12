@@ -182,7 +182,20 @@ jobs:
                 python -m poetry run doit push:${{ matrix.template }}
             - name: 'Open pull request'
               run: |
-                  curl -s --location --request POST --header "Authorization: Bearer $GITHUB_TOKEN" \
-                    --header 'Content-Type: application/json' \
-                    --data-raw '{"head": "update", "base": "master", "title": "auto-updates"}' \
-                    https://api.github.com/repos/platformsh-templates/${{ matrix.template }}/pulls
+                  #if successful, the cli will return the URL to the created PR
+                  response=$(gh pr create --head update --base master --title "auto-updates" --body "automated update from template-builder" --repo gilzow/${{ matrix.template }})
+                  # if the cli returns 1, i believe the step will fail so I dont think we need to capture it
+                  boolPRCreated=$?
+                  prRegex="([0-9]+$)"
+                  if [[ -n "${response}" && $response =~ $prRegex ]]; then
+                    echo "::set-output name=pull-request-number::${BASH_REMATCH[1]}"
+                  else
+                    echo "cli didn't fail but response is empty or didnt match the regex?"
+                    echo "${response}"
+                  fi
+            - name: Automatically merge only after necessary requirements are met
+              if: steps.open-pull-request.outputs.pull-request-number != ''
+              run: |
+                  gh pr merge ${{ steps.open-pull-request.outputs.pull-request-number }} --auto --merge --repo=gilzow/${{ matrix.template }}
+                  lastcommand=$?
+                  # @TODO what, if anything, should we do if we can't set the AutoMR flag?
