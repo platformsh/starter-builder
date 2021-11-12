@@ -13,6 +13,12 @@ env:
     OPERATION_NAME: update
     GITHUB_TOKEN: ${{ secrets.DEVREL_TOKEN }}
     PLATFORMSH_CLI_TOKEN: ${{ secrets.PSH_CLI_TOKEN }}
+    # Notification vars.
+    SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+    SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+    JOB_ID: 'source operations'
+    START_MESSAGE: 'Testing user-facing source operations for all templates.'
+    JOB_COLOR: "#FF9F9F"
 
 jobs:
     build:
@@ -41,7 +47,10 @@ jobs:
           - name: 'Start notification on Slack'
             id: startslack
             run: |
-              printenv
+              RUN_URL=https://github.com/platformsh/starter-builder/actions/runs/$GITHUB_RUN_ID
+              THREAD_ID=$(SLACK_BOT_TOKEN=$SLACK_TOKEN CHANNEL_ID=$SLACK_CHANNEL_ID JOB_ID="$JOB_ID" JOB_COLOR=$JOB_COLOR poetry run python slack_notifier.py start $RUN_URL "$START_MESSAGE")
+              echo "::set-output name=threadts::$THREAD_ID"
+
     # test:
     #     needs: build
     #     runs-on: ubuntu-latest
